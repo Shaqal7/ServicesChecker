@@ -23,7 +23,10 @@ public class RestEndpointChecker : IRestEndpointChecker
     {
         try
         {
-            using var response = await _httpClient.GetAsync(url, cancellationToken);
+            // Ensure URL has a protocol
+            var normalizedUrl = NormalizeUrl(url);
+
+            using var response = await _httpClient.GetAsync(normalizedUrl, cancellationToken);
 
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -46,5 +49,20 @@ public class RestEndpointChecker : IRestEndpointChecker
         {
             return (ServiceStatus.Error, null);
         }
+    }
+
+    private static string NormalizeUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return url;
+
+        // If URL doesn't start with http:// or https://, add https://
+        if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+            !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"https://{url}";
+        }
+
+        return url;
     }
 }

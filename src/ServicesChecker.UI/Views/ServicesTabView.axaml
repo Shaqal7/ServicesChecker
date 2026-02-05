@@ -63,7 +63,7 @@
                             Spacing="12"
                             Margin="0,12,0,0">
                     <TextBox Text="{Binding NewServiceName}"
-                             Watermark="Service name or URL..."
+                             Watermark="Service name or URL (e.g., www.example.com)..."
                              Width="300"/>
                     <CheckBox Content="REST Endpoint"
                               IsChecked="{Binding NewServiceIsRest}"/>
