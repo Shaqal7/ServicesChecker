@@ -12,9 +12,11 @@ public partial class LogFileItemViewModel : ObservableObject
     private string _fileName = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FileSizeFormatted))]
     private long _fileSizeBytes;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusColor))]
     private bool _exists;
 
     [ObservableProperty]

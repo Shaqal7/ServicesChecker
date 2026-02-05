@@ -242,6 +242,111 @@ Managed centrally in `Directory.Packages.props`:
 - **Microsoft.Extensions.DependencyInjection** - DI container
 - **System.ServiceProcess.ServiceController** - Windows service management
 
+## Software Engineering Principles
+
+This project adheres to industry-standard software engineering principles:
+
+### SOLID Principles
+
+1. **Single Responsibility Principle (SRP)**
+   - Each class has one reason to change
+   - ViewModels handle UI logic, Services handle business logic, Repositories handle data persistence
+   - Example: `WindowsServiceManager` only manages Windows services, not REST endpoints
+
+2. **Open/Closed Principle (OCP)**
+   - Open for extension, closed for modification
+   - Interface-based design allows new implementations without changing existing code
+   - Example: Can add new `IServiceRepository` implementations (SQL, XML) without modifying consumers
+
+3. **Liskov Substitution Principle (LSP)**
+   - Derived classes/implementations are substitutable for their base types
+   - All interface implementations follow their contracts
+   - Example: Any `IServiceRepository` implementation can be swapped without breaking functionality
+
+4. **Interface Segregation Principle (ISP)**
+   - Clients should not depend on interfaces they don't use
+   - Interfaces are focused and specific (e.g., `IWindowsServiceManager`, `IRestEndpointChecker` are separate)
+   - No "fat" interfaces forcing implementation of unused methods
+
+5. **Dependency Inversion Principle (DIP)**
+   - High-level modules don't depend on low-level modules; both depend on abstractions
+   - ViewModels depend on `IWindowsServiceManager` interface, not concrete implementation
+   - Enables testability and flexibility
+
+### DRY (Don't Repeat Yourself)
+
+- **Avoid Code Duplication**: Extract common logic into reusable methods/classes
+- **CommunityToolkit.Mvvm Source Generators**: Eliminates boilerplate property/command code
+- **Extension Methods**: `InfrastructureServiceExtensions.AddInfrastructure()` centralizes DI registration
+- **Converters**: `StatusToColorConverter` used throughout UI instead of repeating color logic
+- **ViewModelBase**: Common properties (`IsBusy`, `ErrorMessage`) inherited by all ViewModels
+
+### KISS (Keep It Simple, Stupid)
+
+- **No Over-Engineering**: Application Services layer omitted (not needed for this use case)
+- **No Unnecessary Abstractions**: Direct use of Domain entities instead of DTOs
+- **Simple JSON Persistence**: File-based storage instead of complex database setup
+- **Straightforward Naming**: Clear, descriptive names (`WindowsServiceManager`, not `WinSvcMgr`)
+
+### YAGNI (You Aren't Gonna Need It)
+
+- **Build What's Needed**: Features implemented based on requirements, not speculation
+- **No Premature Optimization**: Simple implementations first (e.g., SemaphoreSlim locking instead of complex concurrency)
+- **No Unused Abstractions**: Removed planned DTOs/Application Services when they proved unnecessary
+
+### Separation of Concerns (SoC)
+
+- **Clean Architecture Layers**: Clear boundaries between Domain, Application, Infrastructure, UI
+- **MVVM Pattern**: Views, ViewModels, and Models are separated
+- **Repository Pattern**: Data access abstracted from business logic
+- **Service Layer**: Infrastructure concerns isolated from UI
+
+### Dependency Injection (DI)
+
+- **Constructor Injection**: All dependencies injected via constructors
+- **Lifetime Management**: Singletons for stateful services, Transients for ViewModels
+- **Testability**: Easy to mock dependencies for unit testing
+- **Configuration**: Centralized in `App.axaml.cs` and `InfrastructureServiceExtensions.cs`
+
+### Fail Fast Principle
+
+- **Early Validation**: Null checks, argument validation at method entry
+- **Meaningful Exceptions**: Clear error messages for debugging
+- **CancellationToken Support**: Allows graceful cancellation of long-running operations
+
+### Convention Over Configuration
+
+- **Standard Naming**: Interfaces start with `I`, ViewModels end with `ViewModel`
+- **Folder Structure**: Consistent organization (Entities, Enums, Services, Repositories)
+- **File Naming**: Match class names (e.g., `ServiceInfo.cs` contains `ServiceInfo` class)
+
+### Composition Over Inheritance
+
+- **Interface-Based Design**: Services implement interfaces, not extend base classes
+- **Minimal Inheritance**: Only ViewModelBase for shared ViewModel functionality
+- **Favor Composition**: ViewModels compose multiple services rather than inheriting behavior
+
+### Testability
+
+- **Interface Abstractions**: All dependencies are interfaces (mockable)
+- **Pure Functions**: Business logic methods have no side effects where possible
+- **Async/Await**: Proper async patterns enable testing with task-based assertions
+- **CancellationToken**: Operations can be cancelled during tests
+
+### Performance Best Practices
+
+- **Async/Await**: Non-blocking I/O operations
+- **Thread-Safety**: SemaphoreSlim for concurrent file access
+- **Lazy Loading**: Data loaded on-demand, not at startup
+- **Efficient Data Structures**: ObservableCollection for UI binding
+
+### Code Quality
+
+- **Nullable Reference Types**: Enabled project-wide (`<Nullable>enable</Nullable>`)
+- **Treat Warnings as Errors**: `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`
+- **Consistent Formatting**: Standard C# conventions
+- **Meaningful Names**: Self-documenting code
+
 ## Important Patterns
 
 ### Adding New Service Interfaces

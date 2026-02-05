@@ -10,9 +10,12 @@ public partial class ServiceItemViewModel : ObservableObject
     private string _name = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusText))]
+    [NotifyPropertyChangedFor(nameof(StatusColor))]
     private ServiceStatus _status;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsWindowsService))]
     private ServiceType _type;
 
     [ObservableProperty]
@@ -22,6 +25,7 @@ public partial class ServiceItemViewModel : ObservableObject
     private bool _isConnectingToDb;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusText))]
     private string? _errorMessage;
 
     [ObservableProperty]
