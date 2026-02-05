@@ -1,0 +1,38 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Status Colors -->
+    <Color x:Key="StatusRunningColor">#10B981</Color>
+    <Color x:Key="StatusStoppedColor">#6B7280</Color>
+    <Color x:Key="StatusErrorColor">#EF4444</Color>
+    <Color x:Key="StatusAvailableColor">#10B981</Color>
+    <Color x:Key="StatusUnavailableColor">#EF4444</Color>
+    <Color x:Key="StatusPendingColor">#F59E0B</Color>
+    <Color x:Key="StatusUnknownColor">#9CA3AF</Color>
+
+    <!-- Status Brushes -->
+    <SolidColorBrush x:Key="StatusRunningBrush" Color="{StaticResource StatusRunningColor}"/>
+    <SolidColorBrush x:Key="StatusStoppedBrush" Color="{StaticResource StatusStoppedColor}"/>
+    <SolidColorBrush x:Key="StatusErrorBrush" Color="{StaticResource StatusErrorColor}"/>
+    <SolidColorBrush x:Key="StatusAvailableBrush" Color="{StaticResource StatusAvailableColor}"/>
+    <SolidColorBrush x:Key="StatusUnavailableBrush" Color="{StaticResource StatusUnavailableColor}"/>
+    <SolidColorBrush x:Key="StatusPendingBrush" Color="{StaticResource StatusPendingColor}"/>
+    <SolidColorBrush x:Key="StatusUnknownBrush" Color="{StaticResource StatusUnknownColor}"/>
+
+    <!-- Accent Colors -->
+    <Color x:Key="AccentColor">#0078D4</Color>
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+
+    <!-- Card Colors -->
+    <Color x:Key="CardBackgroundColorLight">#FFFFFF</Color>
+    <Color x:Key="CardBackgroundColorDark">#2D2D2D</Color>
+    <Color x:Key="CardBorderColorLight">#E5E7EB</Color>
+    <Color x:Key="CardBorderColorDark">#404040</Color>
+
+    <!-- Warning Colors -->
+    <Color x:Key="WarningColor">#F59E0B</Color>
+    <Color x:Key="WarningBackgroundColor">#FEF3C7</Color>
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+    <SolidColorBrush x:Key="WarningBackgroundBrush" Color="{StaticResource WarningBackgroundColor}"/>
+
+</ResourceDictionary>

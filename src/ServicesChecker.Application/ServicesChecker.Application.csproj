@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>ServicesChecker.Application</RootNamespace>
+    <AssemblyName>ServicesChecker.Application</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ServicesChecker.Domain\ServicesChecker.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

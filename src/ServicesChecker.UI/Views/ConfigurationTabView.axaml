@@ -1,0 +1,124 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ServicesChecker.UI.ViewModels"
+             x:Class="ServicesChecker.UI.Views.ConfigurationTabView"
+             x:DataType="vm:ConfigurationTabViewModel">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,0,0,16">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel>
+                    <TextBlock Text="Log Files Management"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,4"/>
+                    <TextBlock Text="Track log files and manage disk space"
+                               FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="8">
+                    <Button Content="Browse..."
+                            x:Name="BrowseButton"/>
+                    <Button Content="Delete From Disk"
+                            Command="{Binding DeleteFromDiskCommand}"
+                            CommandParameter="{Binding SelectedLogFile}"
+                            IsEnabled="{Binding SelectedLogFile.Exists, FallbackValue=False}"/>
+                    <Button Content="Refresh"
+                            Command="{Binding RefreshCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Log Files DataGrid -->
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding LogFiles}"
+                  SelectedItem="{Binding SelectedLogFile}"
+                  AutoGenerateColumns="False"
+                  CanUserReorderColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="True"
+                  GridLinesVisibility="Horizontal"
+                  IsReadOnly="True"
+                  SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="" Width="40">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate DataType="vm:LogFileItemViewModel">
+                            <Ellipse Width="10" Height="10"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center">
+                                <Ellipse.Fill>
+                                    <SolidColorBrush Color="{Binding StatusColor}"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Header="File Name"
+                                    Binding="{Binding FileName}"
+                                    Width="*"/>
+
+                <DataGridTextColumn Header="Size"
+                                    Binding="{Binding FileSizeFormatted}"
+                                    Width="100"/>
+
+                <DataGridTextColumn Header="Path"
+                                    Binding="{Binding FilePath}"
+                                    Width="300"/>
+            </DataGrid.Columns>
+
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Delete From Disk"
+                              Command="{Binding $parent[DataGrid].((vm:ConfigurationTabViewModel)DataContext).DeleteFromDiskCommand}"
+                              CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
+                    <MenuItem Header="Remove from List"
+                              Command="{Binding $parent[DataGrid].((vm:ConfigurationTabViewModel)DataContext).RemoveLogFileCommand}"
+                              CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+        </DataGrid>
+
+        <!-- Empty State -->
+        <Border Grid.Row="1"
+                IsVisible="{Binding !LogFiles.Count}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+            <StackPanel Spacing="12" HorizontalAlignment="Center">
+                <PathIcon Data="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,19L8,15H10.5V12H13.5V15H16L12,19Z"
+                          Width="48" Height="48"
+                          Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                <TextBlock Text="No log files tracked"
+                           FontSize="16"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                <TextBlock Text="Click 'Browse...' to add log files to track"
+                           FontSize="12"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Loading Overlay -->
+        <Border Grid.Row="1"
+                Background="#80000000"
+                IsVisible="{Binding IsBusy}">
+            <TextBlock Text="Loading..."
+                       Foreground="White"
+                       FontSize="18"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
+        </Border>
+    </Grid>
+</UserControl>

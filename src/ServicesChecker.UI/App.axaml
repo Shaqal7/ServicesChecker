@@ -1,0 +1,37 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ServicesChecker.UI.App"
+             RequestedThemeVariant="Default">
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+    </Application.Styles>
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- Status Colors -->
+            <Color x:Key="StatusRunningColor">#10B981</Color>
+            <Color x:Key="StatusStoppedColor">#6B7280</Color>
+            <Color x:Key="StatusErrorColor">#EF4444</Color>
+            <Color x:Key="StatusPendingColor">#F59E0B</Color>
+            <Color x:Key="StatusUnknownColor">#9CA3AF</Color>
+
+            <!-- Status Brushes -->
+            <SolidColorBrush x:Key="StatusRunningBrush" Color="{StaticResource StatusRunningColor}"/>
+            <SolidColorBrush x:Key="StatusStoppedBrush" Color="{StaticResource StatusStoppedColor}"/>
+            <SolidColorBrush x:Key="StatusErrorBrush" Color="{StaticResource StatusErrorColor}"/>
+            <SolidColorBrush x:Key="StatusPendingBrush" Color="{StaticResource StatusPendingColor}"/>
+
+            <!-- Accent Colors -->
+            <Color x:Key="AccentColor">#0078D4</Color>
+            <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+
+            <!-- Warning Colors -->
+            <Color x:Key="WarningColor">#F59E0B</Color>
+            <Color x:Key="WarningBackgroundColor">#FEF3C7</Color>
+            <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+            <SolidColorBrush x:Key="WarningBackgroundBrush" Color="{StaticResource WarningBackgroundColor}"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

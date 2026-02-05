@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>ServicesChecker.Domain</RootNamespace>
+    <AssemblyName>ServicesChecker.Domain</AssemblyName>
+  </PropertyGroup>
+
+</Project>

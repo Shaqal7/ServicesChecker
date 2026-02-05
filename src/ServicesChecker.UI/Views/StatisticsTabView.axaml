@@ -1,0 +1,193 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ServicesChecker.UI.ViewModels"
+             x:Class="ServicesChecker.UI.Views.StatisticsTabView"
+             x:DataType="vm:StatisticsTabViewModel">
+
+    <ScrollViewer>
+        <StackPanel Spacing="16" Margin="0,0,16,16">
+            <!-- Header -->
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="Docker Storage Statistics"
+                           FontSize="20"
+                           FontWeight="SemiBold"/>
+                <Button Grid.Column="1"
+                        Content="Refresh Statistics"
+                        Command="{Binding RefreshCommand}"/>
+            </Grid>
+
+            <!-- Docker Desktop Status -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Docker Desktop Status:"
+                               FontWeight="SemiBold"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <CheckBox IsChecked="{Binding IsDockerInstalled}"
+                                  IsEnabled="False"
+                                  Content="Docker Desktop is installed"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- VHDX File Info -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Docker VHDX File:"
+                               FontWeight="SemiBold"/>
+
+                    <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto">
+                        <TextBlock Grid.Row="0" Grid.Column="0"
+                                   Text="Path:"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1"
+                                   Text="{Binding VhdxFilePath, FallbackValue='Not found'}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,8"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                   Text="File Size:"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1"
+                                   Text="{Binding VhdxFileSizeFormatted}"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   Margin="0,0,0,8"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0"
+                                   Text="Last Modified:"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1"
+                                   Text="{Binding VhdxLastModified, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}', FallbackValue='N/A'}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Disk Space -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Disk Space:"
+                               FontWeight="SemiBold"/>
+
+                    <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto">
+                        <!-- Available -->
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,24,8">
+                            <TextBlock Text="Available"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock Text="{Binding DiskAvailableFormatted}"
+                                       FontSize="24"
+                                       FontWeight="Bold"
+                                       Foreground="#10B981"/>
+                        </StackPanel>
+
+                        <!-- Used -->
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,24,8">
+                            <TextBlock Text="Used"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock Text="{Binding DiskUsedFormatted}"
+                                       FontSize="24"
+                                       FontWeight="Bold"/>
+                        </StackPanel>
+
+                        <!-- Total -->
+                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,8">
+                            <TextBlock Text="Total"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock Text="{Binding DiskTotalFormatted}"
+                                       FontSize="24"
+                                       FontWeight="Bold"/>
+                        </StackPanel>
+
+                        <!-- Progress Bar -->
+                        <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Spacing="4">
+                            <ProgressBar Value="{Binding DiskUsedPercentage}"
+                                         Maximum="100"
+                                         Height="8"
+                                         CornerRadius="4"/>
+                            <TextBlock HorizontalAlignment="Right"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Text="{Binding DiskUsedPercentage, StringFormat='{}{0:F1}% used'}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Last Updated -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Statistics Last Updated:"
+                               FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <TextBlock Text="{Binding LastUpdated, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Low Disk Space Warning -->
+            <Border Background="{StaticResource WarningBackgroundBrush}"
+                    BorderBrush="{StaticResource WarningBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16"
+                    IsVisible="{Binding IsLowDiskSpace}">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <PathIcon Data="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"
+                              Width="24" Height="24"
+                              Foreground="{StaticResource WarningBrush}"/>
+                    <StackPanel>
+                        <TextBlock Text="Low Disk Space Warning"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource WarningBrush}"/>
+                        <TextBlock Text="Less than 50GB of disk space remains. Consider cleaning up Docker images and containers."
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Info Panel -->
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <PathIcon Data="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+                                  Width="20" Height="20"
+                                  Foreground="{StaticResource AccentBrush}"/>
+                        <TextBlock Text="Information"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <TextBlock Text="This shows the size of Docker's VHDX file and available disk space. You'll be warned if less than 50GB remains on the disk."
+                               TextWrapping="Wrap"
+                               FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <TextBlock Text="Note: Statistics are refreshed automatically every 30 seconds when this tab is active."
+                               FontStyle="Italic"
+                               FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

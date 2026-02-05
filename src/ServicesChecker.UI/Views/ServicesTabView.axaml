@@ -1,0 +1,171 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ServicesChecker.UI.ViewModels"
+             xmlns:converters="using:ServicesChecker.UI.Converters"
+             x:Class="ServicesChecker.UI.Views.ServicesTabView"
+             x:DataType="vm:ServicesTabViewModel">
+
+    <UserControl.Resources>
+        <converters:StatusToColorConverter x:Key="StatusToColorConverter"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*">
+        <!-- Toolbar -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,0,0,16">
+            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
+                <!-- Filter Row -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="16">
+                    <TextBox Text="{Binding FilterText}"
+                             Watermark="Filter services..."
+                             Width="250"/>
+                    <CheckBox Content="Connecting to DB"
+                              IsChecked="{Binding FilterConnectingToDb}"/>
+                </StackPanel>
+
+                <!-- Buttons -->
+                <StackPanel Grid.Row="0" Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="8">
+                    <Button Content="Refresh"
+                            Command="{Binding LoadServicesCommand}"/>
+                </StackPanel>
+
+                <!-- Add Service Row -->
+                <StackPanel Grid.Row="1" Grid.ColumnSpan="2"
+                            Orientation="Horizontal"
+                            Spacing="12"
+                            Margin="0,12,0,0">
+                    <TextBox Text="{Binding NewServiceName}"
+                             Watermark="Service name or URL..."
+                             Width="300"/>
+                    <CheckBox Content="REST Endpoint"
+                              IsChecked="{Binding NewServiceIsRest}"/>
+                    <CheckBox Content="Connects to DB"
+                              IsChecked="{Binding NewServiceConnectsToDb}"/>
+                    <Button Content="Add Service"
+                            Command="{Binding AddServiceCommand}"
+                            Background="{StaticResource AccentBrush}"
+                            Foreground="White"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Container Selector -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,0,0,16"
+                IsVisible="{Binding Containers.Count}">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="Change container:"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"/>
+                <ComboBox ItemsSource="{Binding Containers}"
+                          SelectedItem="{Binding SelectedContainer}"
+                          Width="300"
+                          PlaceholderText="Select container...">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Ellipse Width="8" Height="8"
+                                         Fill="{Binding IsRunning, Converter={StaticResource StatusToColorConverter}}"/>
+                                <TextBlock Text="{Binding Name}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button Content="Switch"
+                        Command="{Binding SwitchContainerCommand}"
+                        IsEnabled="{Binding SelectedContainer, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Services DataGrid -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Services}"
+                  SelectedItem="{Binding SelectedService}"
+                  AutoGenerateColumns="False"
+                  CanUserReorderColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="True"
+                  GridLinesVisibility="Horizontal"
+                  IsReadOnly="True"
+                  SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="" Width="40">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate DataType="vm:ServiceItemViewModel">
+                            <Ellipse Width="10" Height="10"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center">
+                                <Ellipse.Fill>
+                                    <SolidColorBrush Color="{Binding StatusColor}"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Header="Service Name"
+                                    Binding="{Binding Name}"
+                                    Width="*"/>
+
+                <DataGridTextColumn Header="Status"
+                                    Binding="{Binding StatusText}"
+                                    Width="100"/>
+
+                <DataGridTextColumn Header="Version"
+                                    Binding="{Binding Version}"
+                                    Width="150"/>
+
+                <DataGridTemplateColumn Header="DB" Width="50">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate DataType="vm:ServiceItemViewModel">
+                            <CheckBox IsChecked="{Binding IsConnectingToDb}"
+                                      IsEnabled="False"
+                                      HorizontalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Start"
+                              Command="{Binding $parent[DataGrid].((vm:ServicesTabViewModel)DataContext).StartServiceCommand}"
+                              CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
+                    <MenuItem Header="Stop"
+                              Command="{Binding $parent[DataGrid].((vm:ServicesTabViewModel)DataContext).StopServiceCommand}"
+                              CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
+                    <MenuItem Header="Restart"
+                              Command="{Binding $parent[DataGrid].((vm:ServicesTabViewModel)DataContext).RestartServiceCommand}"
+                              CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
+                    <Separator/>
+                    <MenuItem Header="Remove"
+                              Command="{Binding $parent[DataGrid].((vm:ServicesTabViewModel)DataContext).RemoveServiceCommand}"
+                              CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+        </DataGrid>
+
+        <!-- Loading Overlay -->
+        <Border Grid.Row="2"
+                Background="#80000000"
+                IsVisible="{Binding IsBusy}">
+            <TextBlock Text="Loading..."
+                       Foreground="White"
+                       FontSize="18"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
+        </Border>
+    </Grid>
+</UserControl>
