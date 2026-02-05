@@ -10,7 +10,7 @@
 | Faza 1: Naprawa błędów kompilacji | ✅ UKOŃCZONE | 2026-02-05 |
 | Faza 2: Application Layer | 🟡 POMINIĘTE (pusty projekt) | - |
 | Faza 3: Infrastructure Services | ✅ UKOŃCZONE | 2026-02-05 |
-| Faza 4: UI ViewModels | ⏳ OCZEKUJĄCE | - |
+| Faza 4: UI ViewModels | ✅ UKOŃCZONE | 2026-02-05 |
 | Faza 5: Weryfikacja końcowa | ⏳ OCZEKUJĄCE | - |
 
 ## Podsumowanie problemu
@@ -162,45 +162,93 @@ dotnet build tests/ServicesChecker.Infrastructure.Tests
 
 ---
 
-## Faza 4: Uzupełnienie testów UI ViewModels
+## Faza 4: Uzupełnienie testów UI ViewModels ✅
 
+**Status:** UKOŃCZONE
+**Data:** 2026-02-05
 **Ścieżka:** `tests/ServicesChecker.UI.Tests/ViewModels/`
 
-### 4.1 ViewModelBaseTests.cs
-- `IsBusy` - ustawienie i powiadomienie
-- `ErrorMessage` - ustawienie i czyszczenie
-- `SetError()` / `ClearError()` metody
+### 4.1 ViewModelBaseTests.cs ✅
 
-### 4.2 ServiceItemViewModelTests.cs (Priorytet: Wysoki)
-- Właściwości `Name`, `Status`, `Type` - poprawne wartości
-- `StatusColor` - mapowanie statusu na kolor
-- `FormattedVersion` - formatowanie
+**Utworzono:** 15 testów jednostkowych
+Testowane funkcjonalności:
+- `IsBusy` - ustawienie, powiadomienie PropertyChanged (4 testy)
+- `ErrorMessage` - ustawienie, czyszczenie, powiadomienie PropertyChanged (5 testów)
+- `SetError()` / `ClearError()` - metody pomocnicze (6 testów)
 
-### 4.3 LogFileItemViewModelTests.cs (Priorytet: Wysoki)
-- `FileSizeFormatted` - formatowanie rozmiaru (KB, MB, GB)
-- `ExistsText` - "Exists" / "Missing"
-- `StatusColor` - zielony/czerwony
+### 4.2 ServiceItemViewModelTests.cs ✅
 
-### 4.4 ServicesTabViewModelTests.cs (Priorytet: Wysoki)
-- `RefreshServicesCommand` - ładuje usługi
-- `FilterText` - filtrowanie listy
-- `StartServiceCommand` / `StopServiceCommand` - wywołują serwis
-- Obsługa błędów i `IsBusy`
+**Utworzono:** 28 testów jednostkowych
+Testowane funkcjonalności:
+- Właściwości podstawowe: Name, Status, Type, Version, IsConnectingToDb, ErrorMessage, LastChecked (8 testów)
+- `StatusText` - mapowanie statusu na tekst, obsługa ErrorMessage (3 testy)
+- `StatusColor` - mapowanie statusu na kolory (9 testów)
+- `IsWindowsService` - obliczanie z Type (2 testy)
+- `FromEntity()` / `ToEntity()` - mapowanie encji (4 testy)
+- PropertyChanged notifications (2 testy)
 
-### 4.5 ConfigurationTabViewModelTests.cs (Priorytet: Średni)
-- `AddLogFileCommand` - dodaje plik
-- `DeleteLogFileCommand` - usuwa plik
-- `RefreshCommand` - odświeża status
+### 4.3 LogFileItemViewModelTests.cs ✅
 
-### 4.6 StatisticsTabViewModelTests.cs (Priorytet: Średni)
-- `RefreshCommand` - ładuje statystyki Docker
-- Formatowanie `DiskUsageFormatted`, `VhdxSizeFormatted`
-- `IsLowDiskSpace` - ostrzeżenie < 50GB
+**Utworzono:** 27 testów jednostkowych
+Testowane funkcjonalności:
+- Właściwości podstawowe: FilePath, FileName, FileSizeBytes, Exists, LastModified (7 testów)
+- `FileSizeFormatted` - formatowanie rozmiaru B/KB/MB/GB/TB (9 testów)
+- `StatusColor` - zielony (exists) / czerwony (not exists) (2 testy)
+- `FromEntity()` / `ToEntity()` - mapowanie encji (4 testy)
+- PropertyChanged notifications (2 testy)
+- Edge cases (duże wartości, brak zer końcowych) (3 testy)
 
-### 4.7 MainWindowViewModelTests.cs (Priorytet: Niski)
-- Inicjalizacja zakładek
-- `ThemeToggleCommand` - zmiana motywu
-- Zapisywanie ustawień
+### 4.4 ServicesTabViewModelTests.cs ✅
+
+**Utworzono:** 15 testów jednostkowych
+Testowane funkcjonalności:
+- Inicjalizacja konstruktora i właściwości (1 test)
+- Właściwości: FilterText, FilterConnectingToDb, SelectedService, SelectedContainer, NewServiceName, NewServiceIsRest, NewServiceConnectsToDb (7 testów)
+- PropertyChanged notifications (2 testy)
+- `LoadServicesAsync()` - wywołanie repository (1 test)
+- `LoadContainersAsync()` - wywołanie container manager (1 test)
+- Dziedziczenie ViewModelBase: IsBusy, ErrorMessage (2 testy)
+- Collections: Services, Containers (2 testy)
+
+### 4.5 ConfigurationTabViewModelTests.cs ✅
+
+**Utworzono:** 7 testów jednostkowych
+Testowane funkcjonalności:
+- Inicjalizacja konstruktora i właściwości (1 test)
+- Właściwości: SelectedLogFile (1 test)
+- Collections: LogFiles (1 test)
+- `LoadLogFilesAsync()` - wywołanie repository (1 test)
+- Dziedziczenie ViewModelBase: IsBusy, ErrorMessage (2 testy)
+
+### 4.6 StatisticsTabViewModelTests.cs ✅
+
+**Utworzono:** 10 testów jednostkowych
+Testowane funkcjonalności:
+- Inicjalizacja konstruktora (1 test)
+- Właściwości: IsDockerInstalled, VhdxFilePath, VhdxFileSizeBytes, DiskSpace, IsLowDiskSpace (5 testów)
+- `LoadStatisticsAsync()` - wywołanie Docker storage service (1 test)
+- Dziedziczenie ViewModelBase: IsBusy, ErrorMessage (2 testy)
+
+### 4.7 MainWindowViewModelTests.cs ✅
+
+**Utworzono:** 8 testów jednostkowych
+Testowane funkcjonalności:
+- `CurrentTheme` - ustawienie, powiadomienie PropertyChanged, obsługa wszystkich trybów (4 testy)
+- Inicjalizacja zakładek: ServicesTab, ConfigurationTab, StatisticsTab (3 testy)
+- `LoadThemeAsync()` - wywołanie settings repository (1 test)
+
+### Wynik weryfikacji ✅
+
+```bash
+dotnet build tests/ServicesChecker.UI.Tests
+```
+
+**Rezultat:**
+- ✅ Kompilacja zakończona sukcesem
+- ✅ 0 błędów kompilacji
+- ✅ 0 ostrzeżeń
+- ✅ 110 nowych testów gotowych do uruchomienia (15 + 28 + 27 + 15 + 7 + 10 + 8)
+- ✅ Razem 129 testów w UI.Tests (19 controls + 110 viewmodels)
 
 ---
 
@@ -232,15 +280,15 @@ dotnet build tests/ServicesChecker.Infrastructure.Tests
 | `JsonSettingsRepositoryTests.cs` | Dodać `_testFilePath` | Krytyczny | ✅ Ukończone |
 | `FileSystemServiceTests.cs` | Utworzyć nowy | Wysoki | ✅ Ukończone (22 testy) |
 | `RestEndpointCheckerTests.cs` | Utworzyć nowy | Wysoki | ✅ Ukończone (16 testów) |
-| `ServiceItemViewModelTests.cs` | Utworzyć nowy | Wysoki |
-| `LogFileItemViewModelTests.cs` | Utworzyć nowy | Wysoki |
-| `ServicesTabViewModelTests.cs` | Utworzyć nowy | Wysoki |
-| `ViewModelBaseTests.cs` | Utworzyć nowy | Średni |
-| `ConfigurationTabViewModelTests.cs` | Utworzyć nowy | Średni |
-| `StatisticsTabViewModelTests.cs` | Utworzyć nowy | Średni |
+| `ServiceItemViewModelTests.cs` | Utworzyć nowy | Wysoki | ✅ Ukończone (28 testów) |
+| `LogFileItemViewModelTests.cs` | Utworzyć nowy | Wysoki | ✅ Ukończone (27 testów) |
+| `ServicesTabViewModelTests.cs` | Utworzyć nowy | Wysoki | ✅ Ukończone (15 testów) |
+| `ViewModelBaseTests.cs` | Utworzyć nowy | Średni | ✅ Ukończone (15 testów) |
+| `ConfigurationTabViewModelTests.cs` | Utworzyć nowy | Średni | ✅ Ukończone (7 testów) |
+| `StatisticsTabViewModelTests.cs` | Utworzyć nowy | Średni | ✅ Ukończone (10 testów) |
 | `DockerStorageServiceTests.cs` | Utworzyć nowy | Średni | ✅ Ukończone (18 testów) |
 | `DockerContainerManagerTests.cs` | Utworzyć nowy | Średni | ✅ Ukończone (16 testów) |
-| `MainWindowViewModelTests.cs` | Utworzyć nowy | Niski | ⏳ Oczekujące |
+| `MainWindowViewModelTests.cs` | Utworzyć nowy | Niski | ✅ Ukończone (8 testów) |
 | `WindowsServiceManagerTests.cs` | Utworzyć nowy | Niski | ✅ Ukończone (20 testów) |
 
 ---
@@ -253,8 +301,8 @@ dotnet build tests/ServicesChecker.Infrastructure.Tests
 | Infrastructure (Persistence) | 21 | 0 | 21 |
 | Infrastructure (Services) | 0 | 92 ✅ | 92 |
 | UI (Controls) | 19 | 0 | 19 |
-| UI (ViewModels) | 0 | 0 (oczekujące) | 0 |
-| **Razem** | **76** | **92** | **168** |
+| UI (ViewModels) | 0 | 110 ✅ | 110 |
+| **Razem** | **76** | **202** | **278** |
 
 ---
 
