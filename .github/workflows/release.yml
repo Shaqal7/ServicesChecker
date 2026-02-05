@@ -1,0 +1,70 @@
+name: Build, Test & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  PROJECT_PATH: src/ServicesChecker.UI/ServicesChecker.UI.csproj
+  PUBLISH_DIR: publish
+
+jobs:
+  build-test-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ServicesChecker.sln
+
+      - name: Build solution
+        run: dotnet build ServicesChecker.sln --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test ServicesChecker.sln --configuration Release --no-build --verbosity normal
+
+      - name: Publish application
+        run: >
+          dotnet publish ${{ env.PROJECT_PATH }}
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:PublishReadyToRun=true
+          -p:PublishTrimmed=false
+          --output ${{ env.PUBLISH_DIR }}
+
+      - name: Create ZIP archive
+        run: Compress-Archive -Path "${{ env.PUBLISH_DIR }}\*" -DestinationPath "ServicesChecker-win-x64.zip"
+        shell: pwsh
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ServicesChecker-win-x64.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+
+      - name: Upload build artifact
+        if: "!startsWith(github.ref, 'refs/tags/v')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ServicesChecker-win-x64
+          path: ServicesChecker-win-x64.zip
+          retention-days: 30
