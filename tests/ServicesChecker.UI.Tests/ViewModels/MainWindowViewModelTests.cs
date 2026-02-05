@@ -14,6 +14,7 @@ public class MainWindowViewModelTests
     private readonly Mock<ConfigurationTabViewModel> _mockConfigurationTab;
     private readonly Mock<StatisticsTabViewModel> _mockStatisticsTab;
     private readonly Mock<ISettingsRepository> _mockSettingsRepository;
+    private readonly Mock<IUpdateService> _mockUpdateService;
 
     public MainWindowViewModelTests()
     {
@@ -35,6 +36,11 @@ public class MainWindowViewModelTests
         _mockSettingsRepository = new Mock<ISettingsRepository>();
         _mockSettingsRepository.Setup(x => x.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AppSettings { Theme = ThemeMode.System });
+
+        _mockUpdateService = new Mock<IUpdateService>();
+        _mockUpdateService.Setup(x => x.GetCurrentVersion()).Returns("dev");
+        _mockUpdateService.Setup(x => x.CheckForUpdateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UpdateInfo?)null);
     }
 
     [Fact(Skip = "Requires Avalonia UI thread (Dispatcher) - not available in CI/CD")]
@@ -126,12 +132,73 @@ public class MainWindowViewModelTests
         _mockSettingsRepository.Verify(x => x.GetAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
+    [Fact]
+    public async Task CheckForUpdateCommand_WhenUpdateAvailable_SetsIsUpdateAvailableTrue()
+    {
+        // Arrange
+        var update = new UpdateInfo
+        {
+            TagName = "v2026.02.06-abc1234",
+            ReleaseName = "Test Release",
+            IsNewerThanCurrent = true
+        };
+        _mockUpdateService.Setup(x => x.CheckForUpdateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(update);
+        var viewModel = CreateViewModel();
+        await Task.Delay(300); // Allow startup check to complete
+
+        // Assert
+        viewModel.IsUpdateAvailable.Should().BeTrue();
+        viewModel.AvailableUpdate.Should().NotBeNull();
+        viewModel.AvailableUpdate!.TagName.Should().Be("v2026.02.06-abc1234");
+    }
+
+    [Fact]
+    public async Task CheckForUpdateCommand_WhenNoUpdate_IsUpdateAvailableRemainsFalse()
+    {
+        // Arrange
+        _mockUpdateService.Setup(x => x.CheckForUpdateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UpdateInfo?)null);
+        var viewModel = CreateViewModel();
+        await Task.Delay(300);
+
+        // Assert
+        viewModel.IsUpdateAvailable.Should().BeFalse();
+        viewModel.AvailableUpdate.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CheckForUpdateCommand_WhenNetworkError_SilentFailure()
+    {
+        // Arrange
+        _mockUpdateService.Setup(x => x.CheckForUpdateAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Network error"));
+        var viewModel = CreateViewModel();
+        await Task.Delay(300);
+
+        // Assert
+        viewModel.IsUpdateAvailable.Should().BeFalse();
+        viewModel.ErrorMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public void CurrentVersion_ShouldDelegateToUpdateService()
+    {
+        // Arrange
+        _mockUpdateService.Setup(x => x.GetCurrentVersion()).Returns("v2026.01.01-abc1234");
+        var viewModel = CreateViewModel();
+
+        // Assert
+        viewModel.CurrentVersion.Should().Be("v2026.01.01-abc1234");
+    }
+
     private MainWindowViewModel CreateViewModel()
     {
         return new MainWindowViewModel(
             _mockServicesTab.Object,
             _mockConfigurationTab.Object,
             _mockStatisticsTab.Object,
-            _mockSettingsRepository.Object);
+            _mockSettingsRepository.Object,
+            _mockUpdateService.Object);
     }
 }

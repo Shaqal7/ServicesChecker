@@ -3,6 +3,8 @@ using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ServicesChecker.Application.Interfaces.Repositories;
+using ServicesChecker.Application.Interfaces.Services;
+using ServicesChecker.Domain.Entities;
 using ServicesChecker.Domain.Enums;
 
 namespace ServicesChecker.UI.ViewModels;
@@ -10,6 +12,7 @@ namespace ServicesChecker.UI.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly ISettingsRepository _settingsRepository;
+    private readonly IUpdateService _updateService;
 
     [ObservableProperty]
     private ServicesTabViewModel _servicesTab;
@@ -26,18 +29,38 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private ThemeMode _currentTheme = ThemeMode.Dark;
 
+    [ObservableProperty]
+    private bool _isUpdateAvailable;
+
+    [ObservableProperty]
+    private UpdateInfo? _availableUpdate;
+
+    [ObservableProperty]
+    private bool _isDownloadingUpdate;
+
+    [ObservableProperty]
+    private double _downloadProgress;
+
+    [ObservableProperty]
+    private string? _updateStatusMessage;
+
+    public string CurrentVersion => _updateService.GetCurrentVersion();
+
     public MainWindowViewModel(
         ServicesTabViewModel servicesTab,
         ConfigurationTabViewModel configurationTab,
         StatisticsTabViewModel statisticsTab,
-        ISettingsRepository settingsRepository)
+        ISettingsRepository settingsRepository,
+        IUpdateService updateService)
     {
         _servicesTab = servicesTab;
         _configurationTab = configurationTab;
         _statisticsTab = statisticsTab;
         _settingsRepository = settingsRepository;
+        _updateService = updateService;
 
         _ = LoadSettingsAsync();
+        _ = CheckForUpdateAsync();
     }
 
     private async Task LoadSettingsAsync()
@@ -82,6 +105,50 @@ public partial class MainWindowViewModel : ViewModelBase
         if (value == 2)
         {
             _ = StatisticsTab.RefreshCommand.ExecuteAsync(null);
+        }
+    }
+
+    [RelayCommand]
+    private async Task CheckForUpdateAsync()
+    {
+        try
+        {
+            var update = await _updateService.CheckForUpdateAsync();
+            if (update is { IsNewerThanCurrent: true })
+            {
+                AvailableUpdate = update;
+                IsUpdateAvailable = true;
+                UpdateStatusMessage = $"Version {update.TagName} available";
+            }
+        }
+        catch
+        {
+            // Silent failure - network issues should not disturb the user
+        }
+    }
+
+    [RelayCommand]
+    private async Task DownloadAndApplyUpdateAsync()
+    {
+        if (AvailableUpdate is null) return;
+
+        try
+        {
+            IsDownloadingUpdate = true;
+            IsUpdateAvailable = false;
+            UpdateStatusMessage = "Downloading update...";
+
+            var progress = new Progress<double>(p => DownloadProgress = p);
+            var stagingPath = await _updateService.DownloadUpdateAsync(AvailableUpdate, progress);
+
+            UpdateStatusMessage = "Applying update and restarting...";
+            _updateService.ApplyUpdateAndRestart(stagingPath);
+        }
+        catch (Exception ex)
+        {
+            IsDownloadingUpdate = false;
+            IsUpdateAvailable = true;
+            UpdateStatusMessage = $"Update failed: {ex.Message}";
         }
     }
 }

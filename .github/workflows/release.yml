@@ -39,17 +39,6 @@ jobs:
       - name: Run tests
         run: dotnet test ServicesChecker.sln --configuration Release --no-build --verbosity normal
 
-      - name: Publish application
-        run: >
-          dotnet publish ${{ env.PROJECT_PATH }}
-          --configuration Release
-          --runtime win-x64
-          --self-contained true
-          -p:PublishSingleFile=true
-          -p:PublishReadyToRun=true
-          -p:PublishTrimmed=false
-          --output ${{ env.PUBLISH_DIR }}
-
       - name: Generate version tag
         id: version
         run: |
@@ -59,6 +48,18 @@ jobs:
           echo "tag=$tag" >> $env:GITHUB_OUTPUT
           echo "Generated version: $tag"
         shell: pwsh
+
+      - name: Publish application
+        run: >
+          dotnet publish ${{ env.PROJECT_PATH }}
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:PublishReadyToRun=true
+          -p:PublishTrimmed=false
+          -p:InformationalVersion=${{ steps.version.outputs.tag }}
+          --output ${{ env.PUBLISH_DIR }}
 
       - name: Create ZIP archive
         run: Compress-Archive -Path "${{ env.PUBLISH_DIR }}\*" -DestinationPath "ServicesChecker-win-x64.zip"

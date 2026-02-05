@@ -14,6 +14,7 @@
     <Company>ServicesChecker</Company>
     <Product>ServicesChecker</Product>
     <Copyright>Copyright (c) 2026</Copyright>
+    <InformationalVersion Condition="'$(InformationalVersion)' == ''">dev</InformationalVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">

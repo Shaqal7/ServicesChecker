@@ -26,6 +26,14 @@ public static class InfrastructureServiceExtensions
             ServerCertificateCustomValidationCallback = (_, _, _, _) => true // Allow self-signed certs
         });
 
+        // HTTP client for update checking
+        services.AddHttpClient<IUpdateService, GitHubUpdateService>(client =>
+        {
+            client.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
+            client.DefaultRequestHeaders.Add("User-Agent", "ServicesChecker");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
         // Repositories
         services.AddSingleton<IServiceRepository, JsonServiceRepository>();
         services.AddSingleton<ILogFileRepository, JsonLogFileRepository>();

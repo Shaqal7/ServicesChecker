@@ -20,7 +20,7 @@
         <Border Grid.Row="0"
                 Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 Padding="16,8">
-            <Grid ColumnDefinitions="*,Auto">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <PathIcon Data="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z"
                            Width="24" Height="24"
@@ -29,9 +29,50 @@
                                FontSize="18"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding CurrentVersion}"
+                               FontSize="10"
+                               Opacity="0.5"
+                               VerticalAlignment="Center"
+                               Margin="4,0,0,0"/>
                 </StackPanel>
 
+                <!-- Update Available Button -->
                 <Button Grid.Column="1"
+                        Command="{Binding DownloadAndApplyUpdateCommand}"
+                        IsVisible="{Binding IsUpdateAvailable}"
+                        Background="Transparent"
+                        Padding="8"
+                        Margin="0,0,4,0"
+                        ToolTip.Tip="{Binding UpdateStatusMessage}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <PathIcon Data="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M8,12L12,16L16,12L13,12V8H11V12H8Z"
+                                  Width="18" Height="18"
+                                  Foreground="{StaticResource AccentBrush}"/>
+                        <TextBlock Text="Update"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource AccentBrush}"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Download Progress -->
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            Spacing="6"
+                            IsVisible="{Binding IsDownloadingUpdate}"
+                            VerticalAlignment="Center"
+                            Margin="0,0,8,0">
+                    <ProgressBar Minimum="0" Maximum="1"
+                                 Value="{Binding DownloadProgress}"
+                                 Width="100" Height="4"
+                                 VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding UpdateStatusMessage}"
+                               FontSize="11"
+                               VerticalAlignment="Center"
+                               Opacity="0.7"/>
+                </StackPanel>
+
+                <Button Grid.Column="3"
                         Command="{Binding ToggleThemeCommand}"
                         Background="Transparent"
                         Padding="8"
