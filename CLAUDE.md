@@ -225,6 +225,8 @@ src/
     │   ├── ServicesTabView.axaml(.cs)
     │   ├── ConfigurationTabView.axaml(.cs)
     │   └── StatisticsTabView.axaml(.cs)
+    ├── Controls/
+    │   └── StatusIndicator.cs
     └── Converters/
         ├── StatusToColorConverter.cs
         ├── BoolToVisibilityConverter.cs
@@ -238,9 +240,13 @@ Managed centrally in `Directory.Packages.props`:
 - **Avalonia** 11.2.3 - UI framework
 - **Avalonia.Themes.Fluent** - Modern Fluent theme
 - **Avalonia.Controls.DataGrid** - DataGrid control
+- **Avalonia.Headless.XUnit** 11.2.3 - Headless testing for Avalonia controls
 - **CommunityToolkit.Mvvm** 8.4.0 - MVVM with source generators
 - **Microsoft.Extensions.DependencyInjection** - DI container
 - **System.ServiceProcess.ServiceController** - Windows service management
+- **xunit** 2.9.2 - Unit testing framework
+- **Moq** 4.20.72 - Mocking framework
+- **FluentAssertions** 7.0.0 - Fluent assertion library
 
 ## Software Engineering Principles
 
@@ -503,6 +509,7 @@ Unknown:           #9CA3AF (Light Gray)
 - **Docker Container Switching**: Dropdown to select and switch between Docker containers (added beyond original plan)
 - **Formatted Properties**: ViewModels include formatted strings (`FileSizeFormatted`, `DiskAvailableFormatted`) for better UX
 - **Low Disk Space Detection**: Automatic warning when available disk space < 50GB
+- **StatusIndicator Control**: Custom reusable control for status indicators, eliminating code duplication (✅ Implemented)
 
 ### Color Palette (Custom)
 
@@ -550,19 +557,35 @@ Add to `Directory.Packages.props`:
 <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.*" />
 ```
 
-### Custom StatusIndicator Control (Optional Polish)
+### Custom StatusIndicator Control (✅ Implemented)
 
-Currently status indicators use `Ellipse` controls directly in XAML. To improve reusability:
+A reusable custom control that replaced all duplicated `Ellipse` usage for status indicators throughout the application. This implementation follows DRY principles and improves code maintainability.
 
-1. Create `UI/Controls/StatusIndicator.axaml(.cs)`
-2. Add properties: `Status` (ServiceStatus), `IsAnimated` (bool)
-3. Implement pulse animation for `Running` status
-4. Use throughout the application for consistency
+**Implementation**: [StatusIndicator.cs](src/ServicesChecker.UI/Controls/StatusIndicator.cs)
 
-Example usage:
+**Properties**:
+- `StatusColor` (IBrush?) - The brush used to fill the indicator (default: Gray)
+- `Size` (double) - Width and height of the indicator (default: 10.0)
+- `IsAnimated` (bool) - Reserved for future animation implementation (default: false)
+
+**Features**:
+- Inherits from `Ellipse` for efficient rendering
+- Automatic center alignment (horizontal and vertical)
+- Property coercion (negative sizes converted to 0)
+- Null-safe fill handling with fallback to gray
+
+**Usage**:
 ```xml
-<controls:StatusIndicator Status="{Binding Status}" IsAnimated="True" />
+<controls:StatusIndicator Size="10"
+                          StatusColor="{Binding StatusColor, Converter={StaticResource StatusToColorConverter}}"/>
 ```
+
+**Used in**:
+- [ServicesTabView.axaml](src/ServicesChecker.UI/Views/ServicesTabView.axaml:100-101) - Docker container status (Size="8")
+- [ServicesTabView.axaml](src/ServicesChecker.UI/Views/ServicesTabView.axaml:128-129) - Service status in DataGrid (Size="10")
+- [ConfigurationTabView.axaml](src/ServicesChecker.UI/Views/ConfigurationTabView.axaml:62-63) - Log file status in DataGrid (Size="10")
+
+**Testing**: Comprehensive unit tests with 19 test cases covering all functionality ([StatusIndicatorTests.cs](tests/ServicesChecker.UI.Tests/Controls/StatusIndicatorTests.cs))
 
 ### Advanced Animations (Optional Polish)
 
