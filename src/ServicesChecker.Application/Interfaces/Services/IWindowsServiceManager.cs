@@ -13,4 +13,5 @@ public interface IWindowsServiceManager
     Task RestartAsync(string serviceName, CancellationToken cancellationToken = default);
     Task<string?> GetVersionAsync(string serviceName, CancellationToken cancellationToken = default);
     Task<string?> GetExecutablePathAsync(string serviceName, CancellationToken cancellationToken = default);
+    Task<bool> ServiceExistsAsync(string serviceName, CancellationToken cancellationToken = default);
 }

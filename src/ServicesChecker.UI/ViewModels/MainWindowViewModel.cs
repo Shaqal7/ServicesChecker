@@ -24,7 +24,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private int _selectedTabIndex;
 
     [ObservableProperty]
-    private ThemeMode _currentTheme = ThemeMode.System;
+    private ThemeMode _currentTheme = ThemeMode.Dark;
 
     public MainWindowViewModel(
         ServicesTabViewModel servicesTab,
@@ -43,7 +43,10 @@ public partial class MainWindowViewModel : ViewModelBase
     private async Task LoadSettingsAsync()
     {
         var settings = await _settingsRepository.GetAsync();
-        CurrentTheme = settings.Theme;
+        // If System theme is loaded, default to Dark
+        CurrentTheme = settings.Theme == ThemeMode.System
+            ? ThemeMode.Dark
+            : settings.Theme;
     }
 
     partial void OnCurrentThemeChanged(ThemeMode value)
@@ -63,13 +66,10 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task ToggleThemeAsync()
     {
-        CurrentTheme = CurrentTheme switch
-        {
-            ThemeMode.System => ThemeMode.Light,
-            ThemeMode.Light => ThemeMode.Dark,
-            ThemeMode.Dark => ThemeMode.System,
-            _ => ThemeMode.System
-        };
+        // Toggle between Light and Dark only
+        CurrentTheme = CurrentTheme == ThemeMode.Light
+            ? ThemeMode.Dark
+            : ThemeMode.Light;
 
         var settings = await _settingsRepository.GetAsync();
         settings.Theme = CurrentTheme;

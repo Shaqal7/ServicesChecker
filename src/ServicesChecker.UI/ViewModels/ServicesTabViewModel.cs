@@ -184,22 +184,44 @@ public partial class ServicesTabViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(NewServiceName))
             return;
 
-        var service = new ServiceInfo
+        try
         {
-            Name = NewServiceName.Trim(),
-            Type = NewServiceIsRest ? ServiceType.RestEndpoint : ServiceType.WindowsService,
-            IsConnectingToDb = NewServiceConnectsToDb,
-            Status = ServiceStatus.Unknown
-        };
+            ClearError();
+            var serviceName = NewServiceName.Trim();
+            var isRest = NewServiceIsRest;
 
-        await _serviceRepository.AddAsync(service);
-        _allServices.Add(service);
+            // Validate Windows service exists in the system
+            if (!isRest)
+            {
+                var exists = await _windowsServiceManager.ServiceExistsAsync(serviceName);
+                if (!exists)
+                {
+                    SetError($"Usługa Windows '{serviceName}' nie istnieje w systemie. Sprawdź nazwę i spróbuj ponownie.");
+                    return;
+                }
+            }
 
-        NewServiceName = string.Empty;
-        NewServiceIsRest = false;
-        NewServiceConnectsToDb = false;
+            var service = new ServiceInfo
+            {
+                Name = serviceName,
+                Type = isRest ? ServiceType.RestEndpoint : ServiceType.WindowsService,
+                IsConnectingToDb = NewServiceConnectsToDb,
+                Status = ServiceStatus.Unknown
+            };
 
-        ApplyFilter();
+            await _serviceRepository.AddAsync(service);
+            _allServices.Add(service);
+
+            NewServiceName = string.Empty;
+            NewServiceIsRest = false;
+            NewServiceConnectsToDb = false;
+
+            ApplyFilter();
+        }
+        catch (Exception ex)
+        {
+            SetError($"Nie udało się dodać usługi: {ex.Message}");
+        }
     }
 
     [RelayCommand]

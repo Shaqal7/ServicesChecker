@@ -113,6 +113,30 @@ public class WindowsServiceManager : IWindowsServiceManager
         }, cancellationToken);
     }
 
+    public Task<bool> ServiceExistsAsync(string serviceName, CancellationToken cancellationToken = default)
+    {
+        return Task.Run(() =>
+        {
+            try
+            {
+                using var service = new ServiceController(serviceName);
+                // Access a property to trigger validation
+                _ = service.Status;
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                // Service doesn't exist
+                return false;
+            }
+            catch
+            {
+                // Other errors (e.g., access denied) - assume service exists but we can't access it
+                return true;
+            }
+        }, cancellationToken);
+    }
+
     private static ServiceStatus MapStatus(ServiceControllerStatus status)
     {
         return status switch
