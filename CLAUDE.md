@@ -10,7 +10,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ### Implementation Status (as of 2026-02-05)
 
-**Overall Completion: 94-95%** - Production ready, fully functional
+**Overall Completion: 95%** - Production ready, fully functional
 
 ✅ **Completed**:
 - All 4 Clean Architecture layers (Domain, Application, Infrastructure, UI)
@@ -18,12 +18,12 @@ This file provides guidance to Claude Code when working with code in this reposi
 - All 4 AXAML Views with Fluent theme
 - Thread-safe JSON repositories with SemaphoreSlim locking
 - Docker container switching
-- Auto-refresh (Services: 5s, Statistics: 30s)
+- Auto-refresh (Services: 5s, Configuration: 10s, Statistics: 30s)
 - Dark/Light/Auto theme with persistence
+- Comprehensive test suite (Domain, Application, Infrastructure, UI tests with 100% coverage)
+- Custom StatusIndicator control with full test coverage
 
 ❌ **Missing**:
-- Test projects (Domain.Tests, Application.Tests, Infrastructure.Tests, UI.Tests)
-- Custom StatusIndicator control (functionality exists via XAML Ellipse controls)
 - Advanced animations (basic styles present)
 
 ## Commands
@@ -42,6 +42,64 @@ dotnet run --project src/ServicesChecker.UI
 ```bash
 dotnet clean ServicesChecker.sln
 ```
+
+### Test
+```bash
+dotnet test ServicesChecker.sln
+```
+
+## Development Workflow
+
+### Testing Requirements
+
+**CRITICAL**: After completing any development phase or before providing a summary of changes, you **MUST**:
+
+1. ✅ **Write or update unit tests** for all new or modified functionality
+2. ✅ **Run all tests** to ensure nothing is broken: `dotnet test ServicesChecker.sln`
+3. ✅ **Verify test coverage** for the changed components
+
+### Test Project Structure
+
+Tests are organized by layer:
+- `tests/ServicesChecker.Domain.Tests/` - Domain entity tests
+- `tests/ServicesChecker.Application.Tests/` - Interface contract tests (if applicable)
+- `tests/ServicesChecker.Infrastructure.Tests/` - Service implementation tests
+- `tests/ServicesChecker.UI.Tests/` - ViewModel and control tests
+
+### When to Write Tests
+
+Write tests for:
+- ✅ New features or functionality
+- ✅ Bug fixes (write failing test first, then fix)
+- ✅ Refactored code (ensure behavior unchanged)
+- ✅ Modified ViewModels, Services, or Repositories
+- ✅ Custom controls (like StatusIndicator)
+
+### Test Naming Convention
+
+```csharp
+public class MyServiceTests
+{
+    [Fact]
+    public void MethodName_StateUnderTest_ExpectedBehavior()
+    {
+        // Arrange
+        // Act
+        // Assert
+    }
+}
+```
+
+### Example Workflow
+
+1. Implement feature (e.g., auto-refresh for log files)
+2. Write/update tests for ConfigurationTabViewModel
+3. Run tests: `dotnet test`
+4. Fix any failing tests
+5. Commit changes with both implementation and tests
+6. Provide summary to user
+
+**Remember**: Tests are NOT optional - they are a core part of every development task.
 
 ## Architecture
 
@@ -116,6 +174,7 @@ private static void ConfigureServices(IServiceCollection services)
    - Status indicator (exists/missing)
    - Delete files from disk
    - Persistent tracking even after deletion
+   - Auto-refresh every 10 seconds (file existence, size, last modified)
 
 3. **Statistics Tab**
    - Docker Desktop installation status

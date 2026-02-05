@@ -11,6 +11,7 @@ public partial class ConfigurationTabViewModel : ViewModelBase
 {
     private readonly ILogFileRepository _logFileRepository;
     private readonly IFileSystemService _fileSystemService;
+    private CancellationTokenSource? _refreshCts;
 
     [ObservableProperty]
     private ObservableCollection<LogFileItemViewModel> _logFiles = [];
@@ -136,5 +137,35 @@ public partial class ConfigurationTabViewModel : ViewModelBase
     private async Task RefreshAsync()
     {
         await LoadLogFilesAsync();
+    }
+
+    public void StartAutoRefresh()
+    {
+        StopAutoRefresh();
+        _refreshCts = new CancellationTokenSource();
+
+        _ = Task.Run(async () =>
+        {
+            while (!_refreshCts.Token.IsCancellationRequested)
+            {
+                await LoadLogFilesAsync();
+                try
+                {
+                    await Task.Delay(10000, _refreshCts.Token);
+                }
+                catch (TaskCanceledException)
+                {
+                    // Expected when cancellation is requested
+                    break;
+                }
+            }
+        }, _refreshCts.Token);
+    }
+
+    public void StopAutoRefresh()
+    {
+        _refreshCts?.Cancel();
+        _refreshCts?.Dispose();
+        _refreshCts = null;
     }
 }

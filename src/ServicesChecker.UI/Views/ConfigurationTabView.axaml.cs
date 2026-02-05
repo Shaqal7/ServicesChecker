@@ -17,6 +17,23 @@ public partial class ConfigurationTabView : UserControl
         {
             browseButton.Click += BrowseButton_Click;
         }
+
+        // Handle attach/detach for auto-refresh
+        AttachedToVisualTree += (s, e) =>
+        {
+            if (DataContext is ConfigurationTabViewModel vm)
+            {
+                vm.StartAutoRefresh();
+            }
+        };
+
+        DetachedFromVisualTree += (s, e) =>
+        {
+            if (DataContext is ConfigurationTabViewModel vm)
+            {
+                vm.StopAutoRefresh();
+            }
+        };
     }
 
     private async void BrowseButton_Click(object? sender, RoutedEventArgs e)
