@@ -2,13 +2,13 @@
 
 A modern Windows desktop application for monitoring and managing Windows services, REST endpoints, log files, and Docker storage.
 
-![.NET Version](https://img.shields.io/badge/.NET-9.0-blue)
+![.NET Version](https://img.shields.io/badge/.NET-10.0-blue)
 ![Avalonia](https://img.shields.io/badge/Avalonia-11.2.3-purple)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## 🎯 Overview
 
-**ServicesChecker** is a cross-platform desktop application built with Avalonia UI and .NET 9, designed to help developers and system administrators monitor and manage various system resources from a single, intuitive interface. The application follows Clean Architecture principles and implements modern MVVM patterns using CommunityToolkit.Mvvm source generators.
+**ServicesChecker** is a cross-platform desktop application built with Avalonia UI and .NET 10, designed to help developers and system administrators monitor and manage various system resources from a single, intuitive interface. The application follows Clean Architecture principles and implements modern MVVM patterns using CommunityToolkit.Mvvm source generators.
 
 ## ✨ Features
 
@@ -55,7 +55,7 @@ ServicesChecker/
 ### Technology Stack
 
 - **UI Framework**: Avalonia UI 11.2.3
-- **Runtime**: .NET 9.0
+- **Runtime**: .NET 10.0
 - **MVVM**: CommunityToolkit.Mvvm 8.4.0 (with source generators)
 - **Dependency Injection**: Microsoft.Extensions.DependencyInjection
 - **Service Management**: System.ServiceProcess.ServiceController
@@ -64,7 +64,7 @@ ServicesChecker/
 ## 📋 Requirements
 
 - **Operating System**: Windows 10/11 (for Windows service management features)
-- **.NET SDK**: 9.0 or higher
+- **.NET SDK**: 10.0 or higher
 - **Docker Desktop**: (Optional) Required for Docker-related features
 - **Administrator Privileges**: Required for starting/stopping Windows services
 
