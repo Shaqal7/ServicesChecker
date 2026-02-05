@@ -1,3 +1,5 @@
+using Avalonia;
+using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ServicesChecker.Application.Interfaces.Repositories;
@@ -42,6 +44,20 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var settings = await _settingsRepository.GetAsync();
         CurrentTheme = settings.Theme;
+    }
+
+    partial void OnCurrentThemeChanged(ThemeMode value)
+    {
+        if (Avalonia.Application.Current is not null)
+        {
+            Avalonia.Application.Current.RequestedThemeVariant = value switch
+            {
+                ThemeMode.Light => ThemeVariant.Light,
+                ThemeMode.Dark => ThemeVariant.Dark,
+                ThemeMode.System => ThemeVariant.Default,
+                _ => ThemeVariant.Default
+            };
+        }
     }
 
     [RelayCommand]
