@@ -101,7 +101,7 @@
                   IsReadOnly="True"
                   SelectionMode="Single">
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="" Width="40">
+                <DataGridTemplateColumn Header="" Width="30">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate DataType="vm:ServiceItemViewModel">
                             <Ellipse Width="10" Height="10"
@@ -117,17 +117,17 @@
 
                 <DataGridTextColumn Header="Service Name"
                                     Binding="{Binding Name}"
-                                    Width="*"/>
+                                    Width="2*"/>
 
                 <DataGridTextColumn Header="Status"
                                     Binding="{Binding StatusText}"
-                                    Width="100"/>
+                                    Width="*"/>
 
                 <DataGridTextColumn Header="Version"
                                     Binding="{Binding Version}"
-                                    Width="150"/>
+                                    Width="*"/>
 
-                <DataGridTemplateColumn Header="DB" Width="50">
+                <DataGridTemplateColumn Header="DB" Width="70">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate DataType="vm:ServiceItemViewModel">
                             <CheckBox IsChecked="{Binding IsConnectingToDb}"
