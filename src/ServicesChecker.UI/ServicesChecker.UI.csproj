@@ -4,7 +4,7 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>ServicesChecker.UI</RootNamespace>
     <AssemblyName>ServicesChecker</AssemblyName>
-    <!-- <ApplicationIcon>Assets\app-icon.ico</ApplicationIcon> -->
+    <ApplicationIcon>Assets\app-icon.ico</ApplicationIcon>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
