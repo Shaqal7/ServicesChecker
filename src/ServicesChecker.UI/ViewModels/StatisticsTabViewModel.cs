@@ -1,3 +1,4 @@
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ServicesChecker.Application.Interfaces.Services;
@@ -116,6 +117,6 @@ public partial class StatisticsTabViewModel : ViewModelBase
             size /= 1024;
         }
 
-        return $"{size:0.##} {sizes[order]}";
+        return $"{size.ToString("0.##", CultureInfo.InvariantCulture)} {sizes[order]}";
     }
 }

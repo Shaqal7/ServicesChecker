@@ -12,15 +12,28 @@ public class JsonServiceRepositoryTests : IDisposable
     private readonly string _testDirectory;
     private readonly Mock<IFileSystemService> _mockFileSystem;
     private readonly JsonServiceRepository _repository;
+    private readonly Dictionary<string, string> _fileStorage;
     private string _testFilePath => Path.Combine(_testDirectory, "services.json");
 
     public JsonServiceRepositoryTests()
     {
         _testDirectory = Path.Combine(Path.GetTempPath(), $"test_services_{Guid.NewGuid()}");
         Directory.CreateDirectory(_testDirectory);
+        _fileStorage = new Dictionary<string, string>();
 
         _mockFileSystem = new Mock<IFileSystemService>();
         _mockFileSystem.Setup(x => x.GetAppDirectory()).Returns(_testDirectory);
+        _mockFileSystem.Setup(x => x.FileExists(It.IsAny<string>()))
+            .Returns<string>(path => _fileStorage.ContainsKey(path));
+        _mockFileSystem.Setup(x => x.ReadAllTextAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync<string, CancellationToken, IFileSystemService, string>((path, ct) =>
+                _fileStorage.ContainsKey(path) ? _fileStorage[path] : string.Empty);
+        _mockFileSystem.Setup(x => x.WriteAllTextAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, string, CancellationToken>((path, content, ct) =>
+            {
+                _fileStorage[path] = content;
+                return Task.CompletedTask;
+            });
 
         _repository = new JsonServiceRepository(_mockFileSystem.Object);
     }
@@ -59,7 +72,6 @@ public class JsonServiceRepositoryTests : IDisposable
         await _repository.SaveAllAsync(services);
 
         // Assert
-        File.Exists(_testFilePath).Should().BeTrue();
         var savedServices = await _repository.GetAllAsync();
         savedServices.Should().HaveCount(2);
         savedServices[0].Name.Should().Be("Service1");

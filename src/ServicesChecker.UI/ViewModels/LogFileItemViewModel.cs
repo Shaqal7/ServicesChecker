@@ -1,3 +1,4 @@
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ServicesChecker.Domain.Entities;
 
@@ -38,7 +39,7 @@ public partial class LogFileItemViewModel : ObservableObject
                 size /= 1024;
             }
 
-            return $"{size:0.##} {sizes[order]}";
+            return $"{size.ToString("0.##", CultureInfo.InvariantCulture)} {sizes[order]}";
         }
     }
 

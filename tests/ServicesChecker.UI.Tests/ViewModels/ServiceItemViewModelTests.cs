@@ -158,7 +158,7 @@ public class ServiceItemViewModelTests
     public void Type_Changed_ShouldNotifyIsWindowsServiceChanged()
     {
         // Arrange
-        var viewModel = new ServiceItemViewModel();
+        var viewModel = new ServiceItemViewModel { Type = ServiceType.RestEndpoint };
         var notifiedProperties = new List<string>();
         viewModel.PropertyChanged += (sender, args) => notifiedProperties.Add(args.PropertyName!);
 

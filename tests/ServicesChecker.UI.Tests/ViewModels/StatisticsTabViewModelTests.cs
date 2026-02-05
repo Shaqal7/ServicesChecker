@@ -120,10 +120,12 @@ public class StatisticsTabViewModelTests
             .ReturnsAsync(storageInfo);
 
         var viewModel = CreateViewModel();
-        await Task.Delay(200); // Allow initialization
+
+        // Act
+        await viewModel.RefreshCommand.ExecuteAsync(null);
 
         // Assert
-        _mockDockerStorageService.Verify(x => x.GetStorageInfoAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        _mockDockerStorageService.Verify(x => x.GetStorageInfoAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
