@@ -122,6 +122,39 @@ public class MyServiceTests
 
 **Remember**: Tests are NOT optional - they are a core part of every development task.
 
+## Plan Management
+
+When working with implementation plans (via EnterPlanMode):
+
+### Creating Plans
+- **Location**: Save all implementation plans in the `docs/` directory
+- **Naming**: Use descriptive names like `plan-feature-name.md` or `implementation-plan-YYYY-MM-DD.md`
+- **Structure**: Include phases, tasks breakdown, architecture decisions, and implementation steps
+
+### Working with Plans
+- **Progress Tracking**: As you complete each phase or task, update the plan file to mark it as completed
+- **Status Updates**: Use checkboxes (✅/❌) or status indicators to show progress
+- **Phase Documentation**: Document any deviations, decisions, or learnings directly in the plan file
+
+### Example Plan Structure
+```markdown
+# Implementation Plan: Feature Name
+
+## Phase 1: Foundation ✅
+- [x] Task 1 - Completed 2026-02-06
+- [x] Task 2 - Completed 2026-02-06
+
+## Phase 2: Core Implementation 🔄
+- [x] Task 1 - Completed 2026-02-07
+- [ ] Task 2 - In Progress
+- [ ] Task 3 - Pending
+
+## Phase 3: Testing ⏳
+- [ ] Task 1 - Pending
+```
+
+**Important**: Keep the plan file updated throughout implementation so it serves as accurate documentation of both the intended approach and actual progress.
+
 ## Architecture
 
 ### Clean Architecture Layers
