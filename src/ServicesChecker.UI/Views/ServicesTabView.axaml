@@ -99,7 +99,7 @@
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <controls:StatusIndicator Size="8"
-                                                          StatusColor="{Binding IsRunning, Converter={StaticResource StatusToColorConverter}}"/>
+                                                          StatusColor="{Binding IsRunning, Converter={StaticResource StatusToColorConverter}, FallbackValue={x:Static Brushes.Transparent}}"/>
                                 <TextBlock Text="{Binding Name}"/>
                             </StackPanel>
                         </DataTemplate>
