@@ -12,6 +12,7 @@ public class JsonServiceRepositoryTests : IDisposable
     private readonly string _testDirectory;
     private readonly Mock<IFileSystemService> _mockFileSystem;
     private readonly JsonServiceRepository _repository;
+    private string _testFilePath => Path.Combine(_testDirectory, "services.json");
 
     public JsonServiceRepositoryTests()
     {

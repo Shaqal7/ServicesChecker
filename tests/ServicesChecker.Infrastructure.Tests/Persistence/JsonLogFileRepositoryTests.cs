@@ -11,6 +11,7 @@ public class JsonLogFileRepositoryTests : IDisposable
     private readonly string _testDirectory;
     private readonly Mock<IFileSystemService> _mockFileSystem;
     private readonly JsonLogFileRepository _repository;
+    private string _testFilePath => Path.Combine(_testDirectory, "logfiles.json");
 
     public JsonLogFileRepositoryTests()
     {
