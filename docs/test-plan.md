@@ -9,7 +9,7 @@
 |------|--------|------------------|
 | Faza 1: Naprawa błędów kompilacji | ✅ UKOŃCZONE | 2026-02-05 |
 | Faza 2: Application Layer | 🟡 POMINIĘTE (pusty projekt) | - |
-| Faza 3: Infrastructure Services | ⏳ OCZEKUJĄCE | - |
+| Faza 3: Infrastructure Services | ✅ UKOŃCZONE | 2026-02-05 |
 | Faza 4: UI ViewModels | ⏳ OCZEKUJĄCE | - |
 | Faza 5: Weryfikacja końcowa | ⏳ OCZEKUJĄCE | - |
 
@@ -73,43 +73,92 @@ Projekt `Application.Tests` może pozostać pusty lub zawierać testy integracyj
 
 ---
 
-## Faza 3: Uzupełnienie testów Infrastructure Services
+## Faza 3: Uzupełnienie testów Infrastructure Services ✅
 
+**Status:** UKOŃCZONE
+**Data:** 2026-02-05
 **Ścieżka:** `tests/ServicesChecker.Infrastructure.Tests/Services/`
 
-### 3.1 FileSystemServiceTests.cs (Priorytet: Wysoki)
+### 3.1 FileSystemServiceTests.cs (Priorytet: Wysoki) ✅
+
+**Utworzono:** 22 testy jednostkowe
 Testowane metody:
-- `GetAppDirectory()` - zwraca poprawną ścieżkę
-- `FileExists()` - sprawdza istnienie pliku
-- `GetFileSize()` - zwraca rozmiar pliku
-- `GetLastModified()` - zwraca datę modyfikacji
-- `DeleteFile()` - usuwa plik
+- `FileExists()` - sprawdza istnienie pliku (2 testy)
+- `GetFileSize()` - zwraca rozmiar pliku (3 testy)
+- `GetLastModified()` - zwraca datę modyfikacji (2 testy)
+- `DeleteFileAsync()` - usuwa plik (3 testy)
+- `ReadAllTextAsync()` - czyta zawartość pliku (2 testy)
+- `WriteAllTextAsync()` - zapisuje plik (3 testy)
+- `GetDiskSpaceInfo()` - informacje o dysku (3 testy)
+- `GetAppDirectory()` - zwraca katalog aplikacji (2 testy)
 
-### 3.2 RestEndpointCheckerTests.cs (Priorytet: Wysoki)
-Testowane metody z mockowaniem HttpClient:
-- `CheckHealthAsync()` - zwraca `ServiceStatus.Available` dla HTTP 200
-- `CheckHealthAsync()` - zwraca `ServiceStatus.Unavailable` dla HTTP 500
-- `CheckHealthAsync()` - zwraca `ServiceStatus.Error` dla timeout
-- `CheckHealthAsync()` - obsługuje anulowanie CancellationToken
+### 3.2 RestEndpointCheckerTests.cs (Priorytet: Wysoki) ✅
 
-### 3.3 DockerStorageServiceTests.cs (Priorytet: Średni)
+**Utworzono:** 16 testów z mockowaniem HttpMessageHandler
 Testowane metody:
-- `GetStorageInfoAsync()` - zwraca informacje gdy Docker zainstalowany
-- `GetStorageInfoAsync()` - zwraca `IsDockerInstalled = false` gdy brak Docker
-- `GetDiskSpaceInfoAsync()` - kalkulacja procentów i IsLowSpace
+- `CheckHealthAsync()` - różne kody HTTP (200, 201, 202, 204, 400, 401, 403, 404, 500, 502, 503)
+- `CheckHealthAsync()` - obsługa wyjątków (HttpRequestException, TaskCanceledException, Exception)
+- `CheckHealthAsync()` - normalizacja URL (dodawanie https://)
+- `CheckHealthAsync()` - CancellationToken support
+- `CheckHealthWithResponseAsync()` - zwracanie response body
+- `Constructor` - timeout ustawiony na 10 sekund
 
-### 3.4 DockerContainerManagerTests.cs (Priorytet: Średni)
+### 3.3 DockerStorageServiceTests.cs (Priorytet: Średni) ✅
+
+**Utworzono:** 18 testów z mockowanym IFileSystemService
 Testowane metody:
-- `GetContainersAsync()` - parsuje JSON z `docker ps`
-- `StartContainerAsync()` - wywołuje `docker start`
-- `StopContainerAsync()` - wywołuje `docker stop`
-- Obsługa błędów gdy Docker nie zainstalowany
+- `GetStorageInfoAsync()` - Docker nie zainstalowany (1 test)
+- `GetStorageInfoAsync()` - Docker zainstalowany bez VHDX (1 test)
+- `GetStorageInfoAsync()` - Docker z VHDX (1 test)
+- `IsDockerInstalledAsync()` - sprawdzanie instalacji (2 testy)
+- `GetVhdxPathAsync()` - znajdowanie VHDX w różnych lokalizacjach (5 testów)
+- `GetStorageInfoAsync()` - LastUpdated timestamp (2 testy)
+- `GetStorageInfoAsync()` - kalkulacja UsedBytes i UsedPercentage (1 test)
+- CancellationToken support (2 testy)
+- Optymalizacja wywołań FileSystem (1 test)
 
-### 3.5 WindowsServiceManagerTests.cs (Priorytet: Niski)
-Trudne do testowania jednostkowo (wymaga Windows Service API).
-Opcje:
-- Testy integracyjne z prawdziwymi usługami
-- Mock ServiceController (wymaga abstrakcji)
+### 3.4 DockerContainerManagerTests.cs (Priorytet: Średni) ✅
+
+**Utworzono:** 16 testów (integration/documentation)
+**Uwaga:** Większość testów wymaga Docker i jest oznaczona `[Fact(Skip = "Requires Docker")]`
+Testowane metody:
+- `GetContainersAsync()` - parsowanie JSON z docker ps (4 testy)
+- `StartContainerAsync()` - uruchamianie kontenera (1 test)
+- `StopContainerAsync()` - zatrzymywanie kontenera (1 test)
+- `SwitchContainerAsync()` - przełączanie kontenerów (3 testy)
+- CancellationToken support (3 testy)
+- Obsługa błędów (malformed JSON, Docker unavailable) (4 testy dokumentacyjne)
+
+### 3.5 WindowsServiceManagerTests.cs (Priorytet: Niski) ✅
+
+**Utworzono:** 20 testów (integration/documentation)
+**Uwaga:** Większość testów wymaga Windows services i jest oznaczona `[Fact(Skip = ...)]`
+Testowane metody:
+- `GetStatusAsync()` - sprawdzanie statusu usługi (3 testy)
+- `StartAsync()` - uruchamianie usługi (2 testy)
+- `StopAsync()` - zatrzymywanie usługi (2 testy)
+- `RestartAsync()` - restart usługi (1 test)
+- `GetVersionAsync()` - wersja usługi (2 testy)
+- `GetExecutablePathAsync()` - ścieżka do exe (2 testy)
+- `ServiceExistsAsync()` - sprawdzanie istnienia (2 testy)
+- CancellationToken support (1 test)
+- Timeout behavior (2 testy dokumentacyjne)
+- Status mapping (1 test dokumentacyjny)
+- Exception handling (1 test dokumentacyjny)
+- Path parsing (1 test dokumentacyjny)
+
+### Wynik weryfikacji ✅
+
+```bash
+dotnet build tests/ServicesChecker.Infrastructure.Tests
+```
+
+**Rezultat:**
+- ✅ Kompilacja zakończona sukcesem
+- ✅ 0 błędów kompilacji
+- ⚠️ 29 ostrzeżeń (głównie CA1416 - Windows-specific code, oczekiwane)
+- ✅ 92 nowe testy gotowe do uruchomienia (22 + 16 + 18 + 16 + 20)
+- ✅ Razem 113 testów w Infrastructure.Tests (21 persistence + 92 services)
 
 ---
 
@@ -181,31 +230,31 @@ Opcje:
 | `JsonServiceRepositoryTests.cs` | Dodać `_testFilePath` | Krytyczny | ✅ Ukończone |
 | `JsonLogFileRepositoryTests.cs` | Dodać `_testFilePath` | Krytyczny | ✅ Ukończone |
 | `JsonSettingsRepositoryTests.cs` | Dodać `_testFilePath` | Krytyczny | ✅ Ukończone |
-| `FileSystemServiceTests.cs` | Utworzyć nowy | Wysoki |
-| `RestEndpointCheckerTests.cs` | Utworzyć nowy | Wysoki |
+| `FileSystemServiceTests.cs` | Utworzyć nowy | Wysoki | ✅ Ukończone (22 testy) |
+| `RestEndpointCheckerTests.cs` | Utworzyć nowy | Wysoki | ✅ Ukończone (16 testów) |
 | `ServiceItemViewModelTests.cs` | Utworzyć nowy | Wysoki |
 | `LogFileItemViewModelTests.cs` | Utworzyć nowy | Wysoki |
 | `ServicesTabViewModelTests.cs` | Utworzyć nowy | Wysoki |
 | `ViewModelBaseTests.cs` | Utworzyć nowy | Średni |
 | `ConfigurationTabViewModelTests.cs` | Utworzyć nowy | Średni |
 | `StatisticsTabViewModelTests.cs` | Utworzyć nowy | Średni |
-| `DockerStorageServiceTests.cs` | Utworzyć nowy | Średni |
-| `DockerContainerManagerTests.cs` | Utworzyć nowy | Średni |
-| `MainWindowViewModelTests.cs` | Utworzyć nowy | Niski |
-| `WindowsServiceManagerTests.cs` | Utworzyć nowy | Niski |
+| `DockerStorageServiceTests.cs` | Utworzyć nowy | Średni | ✅ Ukończone (18 testów) |
+| `DockerContainerManagerTests.cs` | Utworzyć nowy | Średni | ✅ Ukończone (16 testów) |
+| `MainWindowViewModelTests.cs` | Utworzyć nowy | Niski | ⏳ Oczekujące |
+| `WindowsServiceManagerTests.cs` | Utworzyć nowy | Niski | ✅ Ukończone (20 testów) |
 
 ---
 
 ## Szacowana liczba testów do dodania
 
-| Warstwa | Istniejące | Do dodania | Razem |
-|---------|------------|------------|-------|
+| Warstwa | Istniejące | Dodane | Razem |
+|---------|------------|--------|-------|
 | Domain | 36 | 0 | 36 |
 | Infrastructure (Persistence) | 21 | 0 | 21 |
-| Infrastructure (Services) | 0 | ~30 | ~30 |
+| Infrastructure (Services) | 0 | 92 ✅ | 92 |
 | UI (Controls) | 19 | 0 | 19 |
-| UI (ViewModels) | 0 | ~50 | ~50 |
-| **Razem** | **76** | **~80** | **~156** |
+| UI (ViewModels) | 0 | 0 (oczekujące) | 0 |
+| **Razem** | **76** | **92** | **168** |
 
 ---
 
