@@ -103,9 +103,15 @@ public interface IUpdateService
 1. GET `https://api.github.com/repos/Shaqal7/ServicesChecker/releases/latest`
 2. Parse JSON response (private DTOs with `[JsonPropertyName]`)
 3. Find asset named `ServicesChecker-win-x64.zip`
-4. Compare `tag_name` with current version (if current is `"dev"` → return null)
-5. Return `UpdateInfo` if newer, `null` otherwise
-6. All exceptions caught → return `null` (silent failure)
+4. **Normalize both versions** (current and release) by truncating SHA to 7 characters
+5. Compare normalized versions (if current is `"dev"` → return null)
+6. Return `UpdateInfo` if newer, `null` otherwise
+7. All exceptions caught → return `null` (silent failure)
+
+**Version Normalization** (added to fix hash length mismatch):
+- Handles both short (7-char) and long (40-char) SHA formats
+- Input: `v2026.02.05-7cd4d77` or `v2026.02.05-7cd4d778a82e1e3cfcf2b3b3aed9dcb564e8a2c4`
+- Output: `v2026.02.05-7cd4d77` (always 7-char SHA for consistent comparison)
 
 #### DownloadUpdateAsync
 1. Create staging dir: `{AppDir}\_update_staging\`
