@@ -18,7 +18,7 @@ public partial class ServicesTabViewModel : ViewModelBase
     private readonly IClipboardService _clipboardService;
 
     private CancellationTokenSource? _refreshCts;
-    private readonly List<ServiceInfo> _allServices = [];
+    private readonly List<ServiceItemViewModel> _allServices = [];
 
     [ObservableProperty]
     private ObservableCollection<ServiceItemViewModel> _services = [];
@@ -101,11 +101,12 @@ public partial class ServicesTabViewModel : ViewModelBase
             IsBusy = true;
             ClearError();
 
-            var services = await _serviceRepository.GetAllAsync();
+            var entities = await _serviceRepository.GetAllAsync();
             _allServices.Clear();
-            _allServices.AddRange(services);
+            _allServices.AddRange(entities.Select(ServiceItemViewModel.FromEntity));
 
             await RefreshStatusesAsync();
+            ApplyFilter();
         }
         catch (Exception ex)
         {
@@ -121,6 +122,8 @@ public partial class ServicesTabViewModel : ViewModelBase
     {
         var tasks = _allServices.Select(async service =>
         {
+            if (service.IsBusy) return;
+
             try
             {
                 if (service.Type == ServiceType.RestEndpoint)
@@ -144,8 +147,37 @@ public partial class ServicesTabViewModel : ViewModelBase
         });
 
         await Task.WhenAll(tasks);
-        await _serviceRepository.SaveAllAsync(_allServices);
-        ApplyFilter();
+        await SaveAllAsync();
+    }
+
+    private async Task RefreshSingleServiceAsync(ServiceItemViewModel service)
+    {
+        try
+        {
+            if (service.Type == ServiceType.RestEndpoint)
+            {
+                service.Status = await _restEndpointChecker.CheckHealthAsync(service.Name);
+            }
+            else
+            {
+                service.Status = await _windowsServiceManager.GetStatusAsync(service.Name);
+                service.Version = await _windowsServiceManager.GetVersionAsync(service.Name);
+            }
+            service.ErrorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            service.Status = ServiceStatus.Error;
+            service.ErrorMessage = ex.Message;
+        }
+
+        service.LastChecked = DateTime.UtcNow;
+    }
+
+    private async Task SaveAllAsync()
+    {
+        var entities = _allServices.Select(vm => vm.ToEntity()).ToList();
+        await _serviceRepository.SaveAllAsync(entities);
     }
 
     partial void OnFilterTextChanged(string value) => ApplyFilter();
@@ -166,8 +198,7 @@ public partial class ServicesTabViewModel : ViewModelBase
             filtered = filtered.Where(s => s.IsConnectingToDb);
         }
 
-        Services = new ObservableCollection<ServiceItemViewModel>(
-            filtered.OrderBy(s => s.Name).Select(ServiceItemViewModel.FromEntity));
+        Services = new ObservableCollection<ServiceItemViewModel>(filtered.OrderBy(s => s.Name));
     }
 
     [RelayCommand]
@@ -210,7 +241,7 @@ public partial class ServicesTabViewModel : ViewModelBase
                 }
             }
 
-            var service = new ServiceInfo
+            var entity = new ServiceInfo
             {
                 Name = serviceName,
                 Type = isRest ? ServiceType.RestEndpoint : ServiceType.WindowsService,
@@ -218,8 +249,8 @@ public partial class ServicesTabViewModel : ViewModelBase
                 Status = ServiceStatus.Unknown
             };
 
-            await _serviceRepository.AddAsync(service);
-            _allServices.Add(service);
+            await _serviceRepository.AddAsync(entity);
+            _allServices.Add(ServiceItemViewModel.FromEntity(entity));
 
             // Clear input fields
             NewServiceName = string.Empty;
@@ -251,63 +282,69 @@ public partial class ServicesTabViewModel : ViewModelBase
     [RelayCommand]
     private async Task StartServiceAsync(ServiceItemViewModel? service)
     {
-        if (service == null || !service.IsWindowsService) return;
+        if (service == null || !service.IsWindowsService || service.IsBusy) return;
 
         try
         {
-            IsBusy = true;
+            service.IsBusy = true;
+            service.Status = ServiceStatus.StartPending;
             await _windowsServiceManager.StartAsync(service.Name);
-            await RefreshStatusesAsync();
+            await RefreshSingleServiceAsync(service);
         }
         catch (Exception ex)
         {
-            SetError($"Failed to start service: {ex.Message}");
+            service.Status = ServiceStatus.Error;
+            service.ErrorMessage = ex.Message;
         }
         finally
         {
-            IsBusy = false;
+            service.IsBusy = false;
         }
     }
 
     [RelayCommand]
     private async Task StopServiceAsync(ServiceItemViewModel? service)
     {
-        if (service == null || !service.IsWindowsService) return;
+        if (service == null || !service.IsWindowsService || service.IsBusy) return;
 
         try
         {
-            IsBusy = true;
+            service.IsBusy = true;
+            service.Status = ServiceStatus.StopPending;
             await _windowsServiceManager.StopAsync(service.Name);
-            await RefreshStatusesAsync();
+            await RefreshSingleServiceAsync(service);
         }
         catch (Exception ex)
         {
-            SetError($"Failed to stop service: {ex.Message}");
+            service.Status = ServiceStatus.Error;
+            service.ErrorMessage = ex.Message;
         }
         finally
         {
-            IsBusy = false;
+            service.IsBusy = false;
         }
     }
 
     [RelayCommand]
     private async Task RestartServiceAsync(ServiceItemViewModel? service)
     {
-        if (service == null || !service.IsWindowsService) return;
+        if (service == null || !service.IsWindowsService || service.IsBusy) return;
 
         try
         {
-            IsBusy = true;
+            service.IsBusy = true;
+            service.Status = ServiceStatus.StopPending;
             await _windowsServiceManager.RestartAsync(service.Name);
-            await RefreshStatusesAsync();
+            await RefreshSingleServiceAsync(service);
         }
         catch (Exception ex)
         {
-            SetError($"Failed to restart service: {ex.Message}");
+            service.Status = ServiceStatus.Error;
+            service.ErrorMessage = ex.Message;
         }
         finally
         {
-            IsBusy = false;
+            service.IsBusy = false;
         }
     }
 

@@ -31,6 +31,9 @@ public partial class ServiceItemViewModel : ObservableObject
     [ObservableProperty]
     private DateTime _lastChecked;
 
+    [ObservableProperty]
+    private bool _isBusy;
+
     public string StatusText => Status switch
     {
         ServiceStatus.Running => "Running",

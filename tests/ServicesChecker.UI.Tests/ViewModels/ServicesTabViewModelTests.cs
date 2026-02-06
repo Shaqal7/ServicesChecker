@@ -454,6 +454,167 @@ public class ServicesTabViewModelTests
         viewModel.ErrorMessage.Should().Contain("Failed to copy version");
     }
 
+    [Fact]
+    public async Task StartServiceAsync_ShouldSetPerServiceIsBusy_NotViewLevel()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var service = new ServiceItemViewModel
+        {
+            Name = "TestService",
+            Type = ServiceType.WindowsService,
+            Status = ServiceStatus.Stopped
+        };
+
+        _mockWindowsServiceManager.Setup(x => x.StartAsync("TestService", It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _mockWindowsServiceManager.Setup(x => x.GetStatusAsync("TestService", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ServiceStatus.Running);
+
+        // Act
+        await viewModel.StartServiceCommand.ExecuteAsync(service);
+
+        // Assert
+        viewModel.IsBusy.Should().BeFalse("view-level IsBusy should NOT be set for per-service operations");
+        service.IsBusy.Should().BeFalse("service IsBusy should be reset after operation completes");
+        service.Status.Should().Be(ServiceStatus.Running);
+    }
+
+    [Fact]
+    public async Task StopServiceAsync_ShouldSetPerServiceIsBusy_NotViewLevel()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var service = new ServiceItemViewModel
+        {
+            Name = "TestService",
+            Type = ServiceType.WindowsService,
+            Status = ServiceStatus.Running
+        };
+
+        _mockWindowsServiceManager.Setup(x => x.StopAsync("TestService", It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _mockWindowsServiceManager.Setup(x => x.GetStatusAsync("TestService", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ServiceStatus.Stopped);
+
+        // Act
+        await viewModel.StopServiceCommand.ExecuteAsync(service);
+
+        // Assert
+        viewModel.IsBusy.Should().BeFalse("view-level IsBusy should NOT be set for per-service operations");
+        service.IsBusy.Should().BeFalse("service IsBusy should be reset after operation completes");
+        service.Status.Should().Be(ServiceStatus.Stopped);
+    }
+
+    [Fact]
+    public async Task RestartServiceAsync_ShouldSetPerServiceIsBusy_NotViewLevel()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var service = new ServiceItemViewModel
+        {
+            Name = "TestService",
+            Type = ServiceType.WindowsService,
+            Status = ServiceStatus.Running
+        };
+
+        _mockWindowsServiceManager.Setup(x => x.RestartAsync("TestService", It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _mockWindowsServiceManager.Setup(x => x.GetStatusAsync("TestService", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ServiceStatus.Running);
+
+        // Act
+        await viewModel.RestartServiceCommand.ExecuteAsync(service);
+
+        // Assert
+        viewModel.IsBusy.Should().BeFalse("view-level IsBusy should NOT be set for per-service operations");
+        service.IsBusy.Should().BeFalse("service IsBusy should be reset after operation completes");
+    }
+
+    [Fact]
+    public async Task StartServiceAsync_WhenServiceAlreadyBusy_ShouldNotStart()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var service = new ServiceItemViewModel
+        {
+            Name = "TestService",
+            Type = ServiceType.WindowsService,
+            Status = ServiceStatus.Stopped,
+            IsBusy = true
+        };
+
+        // Act
+        await viewModel.StartServiceCommand.ExecuteAsync(service);
+
+        // Assert
+        _mockWindowsServiceManager.Verify(x => x.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never,
+            "should not attempt to start a service that is already busy");
+    }
+
+    [Fact]
+    public async Task StartServiceAsync_WhenFails_ShouldSetServiceError()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var service = new ServiceItemViewModel
+        {
+            Name = "TestService",
+            Type = ServiceType.WindowsService,
+            Status = ServiceStatus.Stopped
+        };
+
+        _mockWindowsServiceManager.Setup(x => x.StartAsync("TestService", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Access denied"));
+
+        // Act
+        await viewModel.StartServiceCommand.ExecuteAsync(service);
+
+        // Assert
+        service.Status.Should().Be(ServiceStatus.Error);
+        service.ErrorMessage.Should().Contain("Access denied");
+        service.IsBusy.Should().BeFalse("IsBusy should be reset even after failure");
+    }
+
+    [Fact]
+    public void ServiceItemViewModel_IsBusy_DefaultValue_ShouldBeFalse()
+    {
+        // Arrange & Act
+        var service = new ServiceItemViewModel();
+
+        // Assert
+        service.IsBusy.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ServiceItemViewModel_IsBusy_ShouldRaisePropertyChanged()
+    {
+        // Arrange
+        var service = new ServiceItemViewModel();
+        var propertyChangedRaised = false;
+        service.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(ServiceItemViewModel.IsBusy))
+                propertyChangedRaised = true;
+        };
+
+        // Act
+        service.IsBusy = true;
+
+        // Assert
+        propertyChangedRaised.Should().BeTrue();
+    }
+
     private ServicesTabViewModel CreateViewModel()
     {
         return new ServicesTabViewModel(
