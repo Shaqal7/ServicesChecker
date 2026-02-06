@@ -23,7 +23,8 @@ public class GitHubUpdateService : IUpdateService
     {
         "settings.json",
         "services.json",
-        "logfiles.json"
+        "logfiles.json",
+        "_update.log"
     };
 
     public GitHubUpdateService(HttpClient httpClient, IFileSystemService fileSystemService)
@@ -138,26 +139,61 @@ public class GitHubUpdateService : IUpdateService
 
     public void ApplyUpdateAndRestart(string stagingPath)
     {
-        var appDir = _fileSystemService.GetAppDirectory();
+        var appDir = _fileSystemService.GetAppDirectory().TrimEnd('\\');
         var currentPid = Environment.ProcessId;
         var stagingRoot = Path.Combine(appDir, StagingDirName);
         var scriptPath = Path.Combine(stagingRoot, "_update.cmd");
+        var logPath = Path.Combine(appDir, "_update.log");
+        var exePath = Path.Combine(appDir, "ServicesChecker.exe");
+
+        // Trim trailing backslashes from paths to avoid escaping quotes in batch script
+        stagingPath = stagingPath.TrimEnd('\\');
 
         var protectedFilesExclusion = string.Join(" ",
             ProtectedFiles.Select(f => $"\"{f}\""));
 
         var script = $"""
             @echo off
+            echo ===== ServicesChecker Update Script ===== > "{logPath}"
+            echo Script started at %date% %time% >> "{logPath}"
+            echo Staging path: {stagingPath} >> "{logPath}"
+            echo App directory: {appDir} >> "{logPath}"
+            echo Protected files: {protectedFilesExclusion} >> "{logPath}"
+            echo. >> "{logPath}"
+
+            echo Waiting for application to close (PID: {currentPid})... >> "{logPath}"
             :wait
             tasklist /FI "PID eq {currentPid}" 2>NUL | find /I "{currentPid}" >NUL
             if %ERRORLEVEL%==0 (
                 timeout /t 1 /nobreak >NUL
                 goto wait
             )
-            robocopy "{stagingPath}" "{appDir}" /E /XF {protectedFilesExclusion} /NFL /NDL /NJH /NJS /NC /NS /NP >NUL
-            start "" "{Path.Combine(appDir, "ServicesChecker.exe")}"
-            rmdir /S /Q "{stagingRoot}" >NUL 2>NUL
-            del "%~f0" >NUL 2>NUL
+            echo Application closed at %time%. >> "{logPath}"
+            echo. >> "{logPath}"
+
+            echo Listing files in staging directory: >> "{logPath}"
+            dir "{stagingPath}" >> "{logPath}"
+            echo. >> "{logPath}"
+
+            echo Starting robocopy... >> "{logPath}"
+            robocopy "{stagingPath}" "{appDir}" /E /XF {protectedFilesExclusion} >> "{logPath}" 2>&1
+            set ROBOCOPY_EXIT=%ERRORLEVEL%
+            echo Robocopy exit code: %ROBOCOPY_EXIT% >> "{logPath}"
+            echo Note: Exit codes 0-7 are success, 8+ indicate errors >> "{logPath}"
+            echo. >> "{logPath}"
+
+            echo Starting updated application... >> "{logPath}"
+            start "" "{exePath}"
+            echo Application started at %time%. >> "{logPath}"
+            echo. >> "{logPath}"
+
+            timeout /t 2 /nobreak >NUL
+
+            echo Cleaning up staging directory... >> "{logPath}"
+            rmdir /S /Q "{stagingRoot}" >> "{logPath}" 2>&1
+            echo Cleanup complete. >> "{logPath}"
+            echo. >> "{logPath}"
+            echo ===== Update completed at %time% ===== >> "{logPath}"
             """;
 
         File.WriteAllText(scriptPath, script);
