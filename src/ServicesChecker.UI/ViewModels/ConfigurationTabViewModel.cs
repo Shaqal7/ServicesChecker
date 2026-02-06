@@ -234,7 +234,7 @@ public partial class ConfigurationTabViewModel : ViewModelBase
         await LoadLogFilesAsync();
     }
 
-    public void StartAutoRefresh()
+    public virtual void StartAutoRefresh()
     {
         StopAutoRefresh();
         _refreshCts = new CancellationTokenSource();
@@ -257,7 +257,7 @@ public partial class ConfigurationTabViewModel : ViewModelBase
         }, _refreshCts.Token);
     }
 
-    public void StopAutoRefresh()
+    public virtual void StopAutoRefresh()
     {
         _refreshCts?.Cancel();
         _refreshCts?.Dispose();
