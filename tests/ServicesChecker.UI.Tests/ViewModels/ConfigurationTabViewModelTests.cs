@@ -405,6 +405,161 @@ public class ConfigurationTabViewModelTests
         viewModel.IsBusy.Should().BeFalse(); // Should be false even after exception
     }
 
+    [Fact]
+    public async Task DeleteAllFromDiskAsync_WithExistingFiles_ShouldDeleteAllFiles()
+    {
+        // Arrange
+        var logFiles = new List<LogFileInfo>
+        {
+            new() { FilePath = @"C:\Logs\file1.log", FileName = "file1.log", Exists = true },
+            new() { FilePath = @"C:\Logs\file2.log", FileName = "file2.log", Exists = true },
+            new() { FilePath = @"C:\Logs\file3.log", FileName = "file3.log", Exists = true }
+        };
+        _mockLogFileRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(logFiles);
+        _mockFileSystemService.Setup(x => x.FileExists(It.IsAny<string>()))
+            .Returns(true);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+        viewModel.LogFiles.Should().HaveCount(3);
+
+        // Act
+        await viewModel.DeleteAllFromDiskCommand.ExecuteAsync(null);
+
+        // Assert
+        _mockFileSystemService.Verify(x => x.DeleteFileAsync(
+            It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+        _mockLogFileRepository.Verify(x => x.GetAllAsync(It.IsAny<CancellationToken>()), Times.AtLeast(2)); // Initial load + refresh
+    }
+
+    [Fact]
+    public async Task DeleteAllFromDiskAsync_WithEmptyList_ShouldNotDeleteAnything()
+    {
+        // Arrange
+        _mockLogFileRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<LogFileInfo>());
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+        viewModel.LogFiles.Should().BeEmpty();
+
+        // Act
+        await viewModel.DeleteAllFromDiskCommand.ExecuteAsync(null);
+
+        // Assert
+        _mockFileSystemService.Verify(x => x.DeleteFileAsync(
+            It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteAllFromDiskAsync_ShouldSetIsBusyDuringOperation()
+    {
+        // Arrange
+        var logFiles = new List<LogFileInfo>
+        {
+            new() { FilePath = @"C:\Logs\file1.log", FileName = "file1.log", Exists = true }
+        };
+        _mockLogFileRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(logFiles);
+        _mockFileSystemService.Setup(x => x.FileExists(It.IsAny<string>()))
+            .Returns(true);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        bool wasBusyDuringOperation = false;
+        _mockFileSystemService.Setup(x => x.DeleteFileAsync(
+            It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback(() => wasBusyDuringOperation = viewModel.IsBusy)
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await viewModel.DeleteAllFromDiskCommand.ExecuteAsync(null);
+
+        // Assert
+        wasBusyDuringOperation.Should().BeTrue();
+        viewModel.IsBusy.Should().BeFalse(); // Should be false after completion
+    }
+
+    [Fact]
+    public async Task DeleteAllFromDiskAsync_WhenFileSystemThrows_ShouldSetErrorMessage()
+    {
+        // Arrange
+        var logFiles = new List<LogFileInfo>
+        {
+            new() { FilePath = @"C:\Logs\file1.log", FileName = "file1.log", Exists = true }
+        };
+        _mockLogFileRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(logFiles);
+        _mockFileSystemService.Setup(x => x.FileExists(It.IsAny<string>()))
+            .Returns(true);
+        _mockFileSystemService.Setup(x => x.DeleteFileAsync(
+            It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new IOException("File is locked"));
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        // Act
+        await viewModel.DeleteAllFromDiskCommand.ExecuteAsync(null);
+
+        // Assert
+        viewModel.ErrorMessage.Should().NotBeNullOrEmpty();
+        viewModel.ErrorMessage.Should().Contain("Failed to delete all log files");
+        viewModel.IsBusy.Should().BeFalse(); // Should be false even after exception
+    }
+
+    [Fact]
+    public async Task DeleteAllFromDiskAsync_ShouldClearErrorMessageBeforeOperation()
+    {
+        // Arrange
+        var logFiles = new List<LogFileInfo>
+        {
+            new() { FilePath = @"C:\Logs\file1.log", FileName = "file1.log", Exists = true }
+        };
+        _mockLogFileRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(logFiles);
+        _mockFileSystemService.Setup(x => x.FileExists(It.IsAny<string>()))
+            .Returns(true);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+        viewModel.ErrorMessage = "Previous error";
+
+        // Act
+        await viewModel.DeleteAllFromDiskCommand.ExecuteAsync(null);
+
+        // Assert
+        viewModel.ErrorMessage.Should().BeNull(); // Should be cleared on success
+    }
+
+    [Fact]
+    public async Task DeleteAllFromDiskAsync_WithMixedExistingAndNonExisting_ShouldDeleteOnlyExisting()
+    {
+        // Arrange
+        var logFiles = new List<LogFileInfo>
+        {
+            new() { FilePath = @"C:\Logs\file1.log", FileName = "file1.log", Exists = true },
+            new() { FilePath = @"C:\Logs\file2.log", FileName = "file2.log", Exists = false },
+            new() { FilePath = @"C:\Logs\file3.log", FileName = "file3.log", Exists = true }
+        };
+        _mockLogFileRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(logFiles);
+        _mockFileSystemService.Setup(x => x.FileExists(It.IsAny<string>()))
+            .Returns((string path) => logFiles.First(lf => lf.FilePath == path).Exists);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        // Act
+        await viewModel.DeleteAllFromDiskCommand.ExecuteAsync(null);
+
+        // Assert
+        _mockFileSystemService.Verify(x => x.DeleteFileAsync(
+            It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2)); // Only 2 existing files
+    }
+
     private ConfigurationTabViewModel CreateViewModel()
     {
         return new ConfigurationTabViewModel(

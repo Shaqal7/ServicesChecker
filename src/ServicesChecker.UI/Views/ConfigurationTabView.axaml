@@ -39,6 +39,9 @@
                             Command="{Binding DeleteFromDiskCommand}"
                             CommandParameter="{Binding SelectedLogFile}"
                             IsEnabled="{Binding SelectedLogFile.Exists, FallbackValue=False}"/>
+                    <Button Content="Delete All From Disk"
+                            Command="{Binding DeleteAllFromDiskCommand}"
+                            IsEnabled="{Binding LogFiles.Count}"/>
                     <Button Content="Refresh"
                             Command="{Binding RefreshCommand}"/>
                 </StackPanel>

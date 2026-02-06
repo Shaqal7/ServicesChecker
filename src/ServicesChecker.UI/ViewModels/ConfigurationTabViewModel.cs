@@ -176,6 +176,36 @@ public partial class ConfigurationTabViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task DeleteAllFromDiskAsync()
+    {
+        if (LogFiles.Count == 0) return;
+
+        try
+        {
+            IsBusy = true;
+            ClearError();
+
+            // Delete all existing files from disk
+            var filesToDelete = LogFiles.Where(lf => lf.Exists).ToList();
+            foreach (var logFile in filesToDelete)
+            {
+                await _fileSystemService.DeleteFileAsync(logFile.FilePath);
+            }
+
+            // Refresh the list to update status
+            await LoadLogFilesAsync();
+        }
+        catch (Exception ex)
+        {
+            SetError($"Failed to delete all log files: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
     private async Task DeleteFromDiskAsync(LogFileItemViewModel? logFile)
     {
         if (logFile == null || !logFile.Exists) return;
