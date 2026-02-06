@@ -235,4 +235,88 @@ public class ViewModelBaseTests
         // Assert
         viewModel.ErrorMessage.Should().Be(errorMessage);
     }
+
+    [Fact]
+    public void DismissErrorCommand_ShouldExist()
+    {
+        // Arrange
+        var viewModel = new TestViewModel();
+
+        // Act & Assert
+        viewModel.DismissErrorCommand.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void DismissErrorCommand_WhenErrorMessageSet_ShouldClearError()
+    {
+        // Arrange
+        var viewModel = new TestViewModel { ErrorMessage = "Test error message" };
+
+        // Act
+        viewModel.DismissErrorCommand.Execute(null);
+
+        // Assert
+        viewModel.ErrorMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public void DismissErrorCommand_WhenErrorMessageNull_ShouldRemainNull()
+    {
+        // Arrange
+        var viewModel = new TestViewModel();
+
+        // Act
+        viewModel.DismissErrorCommand.Execute(null);
+
+        // Assert
+        viewModel.ErrorMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public void DismissErrorCommand_MultipleTimes_ShouldWork()
+    {
+        // Arrange
+        var viewModel = new TestViewModel { ErrorMessage = "Error 1" };
+
+        // Act
+        viewModel.DismissErrorCommand.Execute(null);
+        viewModel.ErrorMessage = "Error 2";
+        viewModel.DismissErrorCommand.Execute(null);
+
+        // Assert
+        viewModel.ErrorMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public void DismissErrorCommand_ShouldRaisePropertyChanged()
+    {
+        // Arrange
+        var viewModel = new TestViewModel { ErrorMessage = "Error message" };
+        var propertyChangedRaised = false;
+        viewModel.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(TestViewModel.ErrorMessage))
+                propertyChangedRaised = true;
+        };
+
+        // Act
+        viewModel.DismissErrorCommand.Execute(null);
+
+        // Assert
+        propertyChangedRaised.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DismissErrorCommand_CanExecute_ShouldAlwaysBeTrue()
+    {
+        // Arrange
+        var viewModel = new TestViewModel();
+
+        // Act & Assert
+        viewModel.DismissErrorCommand.CanExecute(null).Should().BeTrue();
+
+        // Set error and test again
+        viewModel.ErrorMessage = "Error";
+        viewModel.DismissErrorCommand.CanExecute(null).Should().BeTrue();
+    }
 }

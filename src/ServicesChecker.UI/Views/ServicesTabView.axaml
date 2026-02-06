@@ -20,16 +20,30 @@
                 Padding="12"
                 Margin="0,0,0,12"
                 IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="⚠"
-                           FontSize="16"
-                           Foreground="#EF4444"
-                           VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding ErrorMessage}"
-                           Foreground="#DC2626"
-                           TextWrapping="Wrap"
-                           VerticalAlignment="Center"/>
-            </StackPanel>
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="⚠"
+                               FontSize="16"
+                               Foreground="#EF4444"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="#DC2626"
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Command="{Binding DismissErrorCommand}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="4"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Close">
+                    <TextBlock Text="✕"
+                               FontSize="14"
+                               Foreground="#DC2626"
+                               FontWeight="Bold"/>
+                </Button>
+            </Grid>
         </Border>
 
         <!-- Toolbar -->
