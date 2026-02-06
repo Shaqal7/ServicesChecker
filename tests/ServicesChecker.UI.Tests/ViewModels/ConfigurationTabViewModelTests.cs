@@ -203,6 +203,208 @@ public class ConfigurationTabViewModelTests
         _mockLogFileRepository.Verify(x => x.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task AddMultipleLogFilesAsync_WithValidPaths_ShouldAddAllFiles()
+    {
+        // Arrange
+        var existingLogFiles = new List<LogFileInfo>
+        {
+            new() { FilePath = @"C:\Logs\existing.log", FileName = "existing.log" }
+        };
+        _mockLogFileRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingLogFiles);
+        _mockFileSystemService.Setup(x => x.FileExists(It.IsAny<string>()))
+            .Returns(true);
+        _mockFileSystemService.Setup(x => x.GetFileSize(It.IsAny<string>()))
+            .Returns(1024);
+        _mockFileSystemService.Setup(x => x.GetLastModified(It.IsAny<string>()))
+            .Returns(DateTime.Now);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var filePaths = new List<string>
+        {
+            @"C:\Logs\file1.log",
+            @"C:\Logs\file2.log",
+            @"C:\Logs\file3.log"
+        };
+
+        // Act
+        await viewModel.AddMultipleLogFilesCommand.ExecuteAsync(filePaths);
+
+        // Assert
+        _mockLogFileRepository.Verify(x => x.SaveAllAsync(
+            It.Is<IEnumerable<LogFileInfo>>(list => list.Count() == 4), // 1 existing + 3 new
+            It.IsAny<CancellationToken>()), Times.Once);
+        viewModel.LogFiles.Should().HaveCount(4);
+    }
+
+    [Fact]
+    public async Task AddMultipleLogFilesAsync_WithNullOrEmpty_ShouldNotAddAnyFiles()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        // Act - null list
+        await viewModel.AddMultipleLogFilesCommand.ExecuteAsync(null);
+
+        // Assert
+        _mockLogFileRepository.Verify(x => x.SaveAllAsync(
+            It.IsAny<IEnumerable<LogFileInfo>>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+
+        // Act - empty list
+        await viewModel.AddMultipleLogFilesCommand.ExecuteAsync(new List<string>());
+
+        // Assert
+        _mockLogFileRepository.Verify(x => x.SaveAllAsync(
+            It.IsAny<IEnumerable<LogFileInfo>>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AddMultipleLogFilesAsync_WithDuplicates_ShouldSkipDuplicates()
+    {
+        // Arrange
+        var existingLogFiles = new List<LogFileInfo>
+        {
+            new() { FilePath = @"C:\Logs\file1.log", FileName = "file1.log" }
+        };
+        _mockLogFileRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingLogFiles);
+        _mockFileSystemService.Setup(x => x.FileExists(It.IsAny<string>()))
+            .Returns(true);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var filePaths = new List<string>
+        {
+            @"C:\Logs\file1.log", // Duplicate
+            @"C:\Logs\file2.log"  // New
+        };
+
+        // Act
+        await viewModel.AddMultipleLogFilesCommand.ExecuteAsync(filePaths);
+
+        // Assert
+        _mockLogFileRepository.Verify(x => x.SaveAllAsync(
+            It.Is<IEnumerable<LogFileInfo>>(list => list.Count() == 2), // 1 existing + 1 new (skipped duplicate)
+            It.IsAny<CancellationToken>()), Times.Once);
+        viewModel.LogFiles.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task AddMultipleLogFilesAsync_WithWhitespaceStrings_ShouldSkipWhitespace()
+    {
+        // Arrange
+        _mockLogFileRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<LogFileInfo>());
+        _mockFileSystemService.Setup(x => x.FileExists(It.IsAny<string>()))
+            .Returns(true);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var filePaths = new List<string>
+        {
+            "",
+            "   ",
+            @"C:\Logs\file1.log"
+        };
+
+        // Act
+        await viewModel.AddMultipleLogFilesCommand.ExecuteAsync(filePaths);
+
+        // Assert
+        _mockLogFileRepository.Verify(x => x.SaveAllAsync(
+            It.Is<IEnumerable<LogFileInfo>>(list => list.Count() == 1),
+            It.IsAny<CancellationToken>()), Times.Once);
+        viewModel.LogFiles.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task AddMultipleLogFilesAsync_WithNonExistentFiles_ShouldAddWithExistsFalse()
+    {
+        // Arrange
+        _mockLogFileRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<LogFileInfo>());
+        _mockFileSystemService.Setup(x => x.FileExists(It.IsAny<string>()))
+            .Returns(false); // Files don't exist
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var filePaths = new List<string>
+        {
+            @"C:\Logs\missing1.log",
+            @"C:\Logs\missing2.log"
+        };
+
+        // Act
+        await viewModel.AddMultipleLogFilesCommand.ExecuteAsync(filePaths);
+
+        // Assert
+        _mockLogFileRepository.Verify(x => x.SaveAllAsync(
+            It.Is<IEnumerable<LogFileInfo>>(list =>
+                list.Count() == 2 && list.All(lf => !lf.Exists)),
+            It.IsAny<CancellationToken>()), Times.Once);
+        viewModel.LogFiles.Should().HaveCount(2);
+        viewModel.LogFiles.Should().AllSatisfy(lf => lf.Exists.Should().BeFalse());
+    }
+
+    [Fact]
+    public async Task AddMultipleLogFilesAsync_ShouldSetIsBusyDuringOperation()
+    {
+        // Arrange
+        _mockLogFileRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<LogFileInfo>());
+        _mockFileSystemService.Setup(x => x.FileExists(It.IsAny<string>()))
+            .Returns(true);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var filePaths = new List<string> { @"C:\Logs\file1.log" };
+
+        bool wasBusyDuringOperation = false;
+        _mockLogFileRepository.Setup(x => x.SaveAllAsync(
+            It.IsAny<IEnumerable<LogFileInfo>>(),
+            It.IsAny<CancellationToken>()))
+            .Callback(() => wasBusyDuringOperation = viewModel.IsBusy)
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await viewModel.AddMultipleLogFilesCommand.ExecuteAsync(filePaths);
+
+        // Assert
+        wasBusyDuringOperation.Should().BeTrue();
+        viewModel.IsBusy.Should().BeFalse(); // Should be false after completion
+    }
+
+    [Fact]
+    public async Task AddMultipleLogFilesAsync_WhenRepositoryThrows_ShouldSetErrorMessage()
+    {
+        // Arrange
+        _mockLogFileRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Repository error"));
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var filePaths = new List<string> { @"C:\Logs\file1.log" };
+
+        // Act
+        await viewModel.AddMultipleLogFilesCommand.ExecuteAsync(filePaths);
+
+        // Assert
+        viewModel.ErrorMessage.Should().NotBeNullOrEmpty();
+        viewModel.ErrorMessage.Should().Contain("Failed to add log files");
+        viewModel.IsBusy.Should().BeFalse(); // Should be false even after exception
+    }
+
     private ConfigurationTabViewModel CreateViewModel()
     {
         return new ConfigurationTabViewModel(

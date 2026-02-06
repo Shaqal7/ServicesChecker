@@ -95,6 +95,71 @@ public partial class ConfigurationTabViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task AddMultipleLogFilesAsync(IEnumerable<string>? filePaths)
+    {
+        if (filePaths == null || !filePaths.Any())
+            return;
+
+        try
+        {
+            IsBusy = true;
+            ClearError();
+
+            // Get current log files
+            var currentLogFiles = await _logFileRepository.GetAllAsync();
+            var logFilesList = currentLogFiles.ToList();
+
+            // Create new log file entities
+            var newLogFiles = new List<LogFileInfo>();
+            foreach (var filePath in filePaths)
+            {
+                if (string.IsNullOrWhiteSpace(filePath))
+                    continue;
+
+                // Skip if already exists in repository
+                if (logFilesList.Any(lf => lf.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                var logFile = new LogFileInfo
+                {
+                    FilePath = filePath,
+                    FileName = Path.GetFileName(filePath),
+                    Exists = _fileSystemService.FileExists(filePath)
+                };
+
+                if (logFile.Exists)
+                {
+                    logFile.FileSizeBytes = _fileSystemService.GetFileSize(filePath);
+                    logFile.LastModified = _fileSystemService.GetLastModified(filePath);
+                }
+
+                newLogFiles.Add(logFile);
+                logFilesList.Add(logFile);
+            }
+
+            // Save all at once (more efficient than multiple AddAsync calls)
+            if (newLogFiles.Count > 0)
+            {
+                await _logFileRepository.SaveAllAsync(logFilesList);
+
+                // Add to UI collection
+                foreach (var logFile in newLogFiles)
+                {
+                    LogFiles.Add(LogFileItemViewModel.FromEntity(logFile));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SetError($"Failed to add log files: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
     private async Task RemoveLogFileAsync(LogFileItemViewModel? logFile)
     {
         if (logFile == null) return;

@@ -43,8 +43,8 @@ public partial class ConfigurationTabView : UserControl
 
         var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Select Log File",
-            AllowMultiple = false,
+            Title = "Select Log File(s)",
+            AllowMultiple = true,
             FileTypeFilter = new[]
             {
                 new FilePickerFileType("Log Files") { Patterns = new[] { "*.log", "*.txt" } },
@@ -54,8 +54,8 @@ public partial class ConfigurationTabView : UserControl
 
         if (files.Count > 0 && DataContext is ConfigurationTabViewModel vm)
         {
-            var path = files[0].Path.LocalPath;
-            await vm.AddLogFileCommand.ExecuteAsync(path);
+            var paths = files.Select(f => f.Path.LocalPath).ToList();
+            await vm.AddMultipleLogFilesCommand.ExecuteAsync(paths);
         }
     }
 }
