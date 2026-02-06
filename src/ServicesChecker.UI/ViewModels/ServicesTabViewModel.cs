@@ -279,7 +279,7 @@ public partial class ServicesTabViewModel : ViewModelBase
         ApplyFilter();
     }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task StartServiceAsync(ServiceItemViewModel? service)
     {
         if (service == null || !service.IsWindowsService || service.IsBusy) return;
@@ -302,7 +302,7 @@ public partial class ServicesTabViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task StopServiceAsync(ServiceItemViewModel? service)
     {
         if (service == null || !service.IsWindowsService || service.IsBusy) return;
@@ -325,7 +325,7 @@ public partial class ServicesTabViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task RestartServiceAsync(ServiceItemViewModel? service)
     {
         if (service == null || !service.IsWindowsService || service.IsBusy) return;
