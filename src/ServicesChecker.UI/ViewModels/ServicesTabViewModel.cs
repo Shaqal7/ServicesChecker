@@ -158,7 +158,7 @@ public partial class ServicesTabViewModel : ViewModelBase
         }
 
         Services = new ObservableCollection<ServiceItemViewModel>(
-            filtered.Select(ServiceItemViewModel.FromEntity));
+            filtered.OrderBy(s => s.Name).Select(ServiceItemViewModel.FromEntity));
     }
 
     [RelayCommand]
