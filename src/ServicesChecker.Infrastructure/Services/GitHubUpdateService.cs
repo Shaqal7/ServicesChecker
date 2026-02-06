@@ -36,9 +36,11 @@ public class GitHubUpdateService : IUpdateService
 
     public string GetCurrentVersion()
     {
-        return Assembly.GetEntryAssembly()?
+        var version = Assembly.GetEntryAssembly()?
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion ?? "dev";
+
+        return NormalizeVersion(version);
     }
 
     public async Task<UpdateInfo?> CheckForUpdateAsync(CancellationToken cancellationToken = default)
@@ -58,7 +60,8 @@ public class GitHubUpdateService : IUpdateService
             if (release is null || string.IsNullOrEmpty(release.TagName))
                 return null;
 
-            if (release.TagName == currentVersion)
+            var releaseVersion = NormalizeVersion(release.TagName);
+            if (releaseVersion == currentVersion)
                 return null;
 
             var asset = release.Assets.FirstOrDefault(
@@ -184,6 +187,27 @@ public class GitHubUpdateService : IUpdateService
         {
             // Best effort cleanup
         }
+    }
+
+    private static string NormalizeVersion(string version)
+    {
+        if (string.IsNullOrEmpty(version) || version == "dev")
+            return version;
+
+        // Format: v2026.02.05-7cd4d77 or v2026.02.05-7cd4d778a82e1e3cfcf2b3b3aed9dcb564e8a2c4
+        // We need to normalize the SHA part to 7 characters
+        var parts = version.Split('-');
+        if (parts.Length != 2)
+            return version;
+
+        var datePart = parts[0]; // v2026.02.05
+        var shaPart = parts[1];  // 7cd4d77 or full hash
+
+        // If SHA is longer than 7 chars, truncate it
+        if (shaPart.Length > 7)
+            shaPart = shaPart[..7];
+
+        return $"{datePart}-{shaPart}";
     }
 
     private sealed class GitHubRelease

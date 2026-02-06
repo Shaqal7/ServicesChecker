@@ -222,4 +222,24 @@ public class GitHubUpdateServiceTests
         // Assert
         result.Should().BeNull();
     }
+
+    [Fact]
+    public void GetCurrentVersion_ShouldNormalizeVersion()
+    {
+        // Arrange
+        var mockHandler = CreateMockHandler(HttpStatusCode.OK, "{}");
+        var httpClient = new HttpClient(mockHandler.Object);
+        var service = CreateService(httpClient);
+
+        // Act
+        var version = service.GetCurrentVersion();
+
+        // Assert - version should not contain hash longer than 7 characters after the dash
+        if (version != "dev" && version.Contains('-'))
+        {
+            var parts = version.Split('-');
+            parts.Should().HaveCount(2);
+            parts[1].Length.Should().BeLessOrEqualTo(7, "SHA should be truncated to 7 characters");
+        }
+    }
 }
