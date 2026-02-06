@@ -13,6 +13,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly ISettingsRepository _settingsRepository;
     private readonly IUpdateService _updateService;
+    private readonly PeriodicTimer _updateCheckTimer = new(TimeSpan.FromMinutes(1));
 
     [ObservableProperty]
     private ServicesTabViewModel _servicesTab;
@@ -61,6 +62,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _ = LoadSettingsAsync();
         _ = CheckForUpdateAsync();
+        _ = StartPeriodicUpdateCheckAsync();
     }
 
     private async Task LoadSettingsAsync()
@@ -149,6 +151,22 @@ public partial class MainWindowViewModel : ViewModelBase
             IsDownloadingUpdate = false;
             IsUpdateAvailable = true;
             UpdateStatusMessage = $"Update failed: {ex.Message}";
+        }
+    }
+
+    private async Task StartPeriodicUpdateCheckAsync()
+    {
+        try
+        {
+            while (await _updateCheckTimer.WaitForNextTickAsync())
+            {
+                // Check for updates every minute
+                await CheckForUpdateAsync();
+            }
+        }
+        catch
+        {
+            // Timer disposed or cancelled - silent exit
         }
     }
 }

@@ -14,7 +14,7 @@ Add auto-update functionality that checks GitHub Releases for new versions, noti
 
 ### 1.1 Modify workflow to embed version into assembly
 
-**File**: [release.yml](../.github/workflows/release.yml)
+**File**: [release.yml](.github/workflows/release.yml)
 
 Move the "Generate version tag" step **before** "Publish application" and pass it as `InformationalVersion`:
 
@@ -43,7 +43,7 @@ Move the "Generate version tag" step **before** "Publish application" and pass i
 
 ### 1.2 Add default dev version for local builds
 
-**File**: [Directory.Build.props](../Directory.Build.props)
+**File**: [Directory.Build.props](Directory.Build.props)
 
 ```xml
 <InformationalVersion Condition="'$(InformationalVersion)' == ''">dev</InformationalVersion>
@@ -103,15 +103,9 @@ public interface IUpdateService
 1. GET `https://api.github.com/repos/Shaqal7/ServicesChecker/releases/latest`
 2. Parse JSON response (private DTOs with `[JsonPropertyName]`)
 3. Find asset named `ServicesChecker-win-x64.zip`
-4. **Normalize both versions** (current and release) by truncating SHA to 7 characters
-5. Compare normalized versions (if current is `"dev"` → return null)
-6. Return `UpdateInfo` if newer, `null` otherwise
-7. All exceptions caught → return `null` (silent failure)
-
-**Version Normalization** (added to fix hash length mismatch):
-- Handles both short (7-char) and long (40-char) SHA formats
-- Input: `v2026.02.05-7cd4d77` or `v2026.02.05-7cd4d778a82e1e3cfcf2b3b3aed9dcb564e8a2c4`
-- Output: `v2026.02.05-7cd4d77` (always 7-char SHA for consistent comparison)
+4. Compare `tag_name` with current version (if current is `"dev"` → return null)
+5. Return `UpdateInfo` if newer, `null` otherwise
+6. All exceptions caught → return `null` (silent failure)
 
 #### DownloadUpdateAsync
 1. Create staging dir: `{AppDir}\_update_staging\`
@@ -139,7 +133,7 @@ Key: `robocopy` with `/XF` excludes JSON data files from being overwritten.
 
 ### 4.2 DI registration
 
-**File**: [InfrastructureServiceExtensions.cs](../src/ServicesChecker.Infrastructure/DependencyInjection/InfrastructureServiceExtensions.cs)
+**File**: [InfrastructureServiceExtensions.cs](src/ServicesChecker.Infrastructure/DependencyInjection/InfrastructureServiceExtensions.cs)
 
 ```csharp
 services.AddHttpClient<IUpdateService, GitHubUpdateService>(client =>
@@ -158,7 +152,7 @@ On initialization, delete any leftover `_update_staging` directory from previous
 
 ## Phase 5: UI Layer — ViewModel
 
-**File**: [MainWindowViewModel.cs](../src/ServicesChecker.UI/ViewModels/MainWindowViewModel.cs)
+**File**: [MainWindowViewModel.cs](src/ServicesChecker.UI/ViewModels/MainWindowViewModel.cs)
 
 ### New dependency
 - `IUpdateService _updateService` (constructor injection)
@@ -186,7 +180,7 @@ _ = CheckForUpdateAsync();  // fire-and-forget, non-blocking
 
 ## Phase 6: UI Layer — AXAML
 
-**File**: [MainWindow.axaml](../src/ServicesChecker.UI/Views/MainWindow.axaml)
+**File**: [MainWindow.axaml](src/ServicesChecker.UI/Views/MainWindow.axaml)
 
 ### Title bar changes
 Change grid from `ColumnDefinitions="*,Auto"` to `ColumnDefinitions="*,Auto,Auto"`:
@@ -259,3 +253,185 @@ Small version text near the app title (opacity 0.5).
 2. **Tests**: `dotnet test ServicesChecker.sln` — all existing + new tests pass
 3. **Manual test (dev)**: Run locally → version shows "dev" → no update notification (correct)
 4. **Manual test (release)**: After CI builds with version tag → app detects update → download → batch script replaces exe → app restarts with new version
+
+---
+
+## Implementation Status
+
+✅ **COMPLETED** - All phases implemented and tested successfully (2026-02-06)
+
+### Bug Fixes Applied:
+1. **Version normalization** - Added `NormalizeVersion()` method to handle SHA length mismatch (full 40-char vs 7-char)
+2. **Batch script path escaping** - Fixed trailing backslash issue causing robocopy failure by using `TrimEnd('\\')`
+3. **Update logging** - Added comprehensive logging to `_update.log` for debugging
+
+### Verification Results:
+- ✅ Version detection works correctly
+- ✅ Update button shows only when newer version available
+- ✅ Download with progress works
+- ✅ Batch script successfully copies files (robocopy exit code 3 = success)
+- ✅ Application restarts with new version
+- ✅ Protected files (settings.json, services.json, logfiles.json, _update.log) preserved
+
+---
+
+## Future Enhancements (Optional)
+
+### Enhancement: Update Installation Progress Feedback
+
+**Problem**: After download completes, user sees no feedback during file installation (robocopy phase). Application closes and reopens with no indication of what's happening in between.
+
+**Current Flow**:
+1. User clicks "Update" ✅
+2. Download progress bar shows (0-100%) ✅
+3. Download completes
+4. Application closes ⚠️ (no feedback)
+5. Batch script waits for app to close
+6. Robocopy copies files (2-3 seconds) ⚠️ (no feedback)
+7. Application reopens with new version
+
+**Proposed Options**:
+
+#### Option 1: Status Message with Indefinite Progress (Recommended - Simple)
+**Complexity**: Low
+**Implementation Time**: 1-2 hours
+
+**Changes**:
+- **ViewModel** (`MainWindowViewModel.cs`):
+  - After download completes, set `UpdateStatusMessage = "Installing update..."`
+  - Show indefinite progress indicator (IsIndeterminate=true)
+  - Add `await Task.Delay(2000)` before calling `ApplyUpdateAndRestart()`
+  - User sees "Installing update..." for 2 seconds before app closes
+
+- **UI** (`MainWindow.axaml`):
+  - Modify progress indicator to support IsIndeterminate mode
+  - Bind status text to `UpdateStatusMessage`
+
+**Pros**:
+- Simple to implement
+- Provides clear feedback without complexity
+- No parsing of external process output needed
+
+**Cons**:
+- No actual progress percentage (just spinner)
+- User doesn't know exactly how long it will take
+
+---
+
+#### Option 2: Visible Console Window
+**Complexity**: Very Low
+**Implementation Time**: 15 minutes
+
+**Changes**:
+- **Infrastructure** (`GitHubUpdateService.cs`):
+  - Change `CreateNoWindow = true` to `CreateNoWindow = false` in `Process.Start`
+  - User sees console window with robocopy output (includes percentages)
+
+**Pros**:
+- Immediate feedback with real progress percentages
+- Zero code changes to progress tracking
+- Easy debugging
+
+**Cons**:
+- Less professional appearance (black console window)
+- Window may appear behind main window
+- Inconsistent with modern UI expectations
+
+---
+
+#### Option 3: Advanced Progress Window (Complex)
+**Complexity**: High
+**Implementation Time**: 8-12 hours
+
+**Architecture**:
+1. Create separate **UpdateHelper.exe** process
+2. Launch helper before closing main app
+3. Helper shows modern progress window
+4. Helper monitors `_update.log` file in real-time
+5. Parses robocopy output for percentage
+6. Updates progress bar
+7. Exits when update completes
+
+**New Files**:
+- `src/ServicesChecker.UpdateHelper/` (new console project)
+- `src/ServicesChecker.UpdateHelper/ProgressWindow.axaml` (Avalonia window)
+- `src/ServicesChecker.UpdateHelper/LogParser.cs`
+- Modify build to include UpdateHelper.exe in release
+
+**Pros**:
+- Professional, polished user experience
+- Real progress percentage from robocopy
+- Separate process survives main app shutdown
+
+**Cons**:
+- Significantly more complex
+- Requires additional project and build configuration
+- Log file parsing can be fragile
+- Overkill for 2-3 second operation
+
+---
+
+### Recommendation
+
+**For now: Option 1 (Status Message with Indefinite Progress)**
+
+Rationale:
+- Robocopy typically completes in 2-3 seconds (verified in logs)
+- Simple spinner + "Installing update..." provides sufficient feedback
+- Low implementation cost vs. user experience improvement
+- Can upgrade to Option 3 later if installation time increases
+
+**Implementation Plan for Option 1** (when ready):
+
+1. **ViewModel Changes** (`MainWindowViewModel.cs`):
+   ```csharp
+   [RelayCommand]
+   private async Task DownloadAndApplyUpdateAsync()
+   {
+       try
+       {
+           IsDownloadingUpdate = true;
+           UpdateStatusMessage = "Downloading update...";
+
+           var stagingPath = await _updateService.DownloadUpdateAsync(
+               AvailableUpdate!,
+               new Progress<double>(p => DownloadProgress = p));
+
+           // NEW: Show installing status
+           UpdateStatusMessage = "Installing update...";
+           DownloadProgress = 0; // Reset to show indeterminate
+           await Task.Delay(2000); // Let user see the message
+
+           _updateService.ApplyUpdateAndRestart(stagingPath);
+       }
+       catch (Exception ex)
+       {
+           SetError($"Update failed: {ex.Message}");
+           IsDownloadingUpdate = false;
+       }
+   }
+   ```
+
+2. **UI Changes** (`MainWindow.axaml`):
+   ```xml
+   <ProgressBar IsVisible="{Binding IsDownloadingUpdate}"
+                Value="{Binding DownloadProgress}"
+                IsIndeterminate="{Binding DownloadProgress, Converter={StaticResource IsZeroConverter}}"
+                Minimum="0" Maximum="1" />
+   <TextBlock Text="{Binding UpdateStatusMessage}" />
+   ```
+
+3. **New Converter** (`IsZeroConverter.cs`):
+   ```csharp
+   // Returns true if value is 0 (for indeterminate mode)
+   public class IsZeroConverter : IValueConverter
+   {
+       public object Convert(object value, ...) => (double)value == 0.0;
+   }
+   ```
+
+4. **Tests**:
+   - Update `MainWindowViewModelTests.cs` to verify status message changes
+   - Verify indeterminate mode activates when progress = 0
+
+**Deferred**: Can implement later if needed
