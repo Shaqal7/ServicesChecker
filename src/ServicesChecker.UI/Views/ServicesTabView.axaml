@@ -173,21 +173,21 @@
                 <ContextMenu>
                     <MenuItem Header="Start"
                               Command="{Binding $parent[DataGrid].((vm:ServicesTabViewModel)DataContext).StartServiceCommand}"
-                              CommandParameter="{Binding}"/>
+                              CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
                     <MenuItem Header="Stop"
                               Command="{Binding $parent[DataGrid].((vm:ServicesTabViewModel)DataContext).StopServiceCommand}"
-                              CommandParameter="{Binding}"/>
+                              CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
                     <MenuItem Header="Restart"
                               Command="{Binding $parent[DataGrid].((vm:ServicesTabViewModel)DataContext).RestartServiceCommand}"
-                              CommandParameter="{Binding}"/>
+                              CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
                     <Separator/>
                     <MenuItem Header="Copy Version"
                               Command="{Binding $parent[DataGrid].((vm:ServicesTabViewModel)DataContext).CopyVersionCommand}"
-                              CommandParameter="{Binding}"/>
+                              CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
                     <Separator/>
                     <MenuItem Header="Remove"
                               Command="{Binding $parent[DataGrid].((vm:ServicesTabViewModel)DataContext).RemoveServiceCommand}"
-                              CommandParameter="{Binding}"/>
+                              CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
                 </ContextMenu>
             </DataGrid.ContextMenu>
         </DataGrid>
