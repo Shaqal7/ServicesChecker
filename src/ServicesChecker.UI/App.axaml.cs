@@ -3,7 +3,9 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
+using ServicesChecker.Application.Interfaces.Services;
 using ServicesChecker.Infrastructure.DependencyInjection;
+using ServicesChecker.UI.Services;
 using ServicesChecker.UI.ViewModels;
 using ServicesChecker.UI.Views;
 
@@ -44,6 +46,9 @@ public partial class App : Avalonia.Application
     {
         // Infrastructure
         services.AddInfrastructure();
+
+        // UI Services
+        services.AddSingleton<IClipboardService, AvaloniaClipboardService>();
 
         // ViewModels
         services.AddTransient<MainWindowViewModel>();

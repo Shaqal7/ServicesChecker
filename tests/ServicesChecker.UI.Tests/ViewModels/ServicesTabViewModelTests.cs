@@ -16,6 +16,7 @@ public class ServicesTabViewModelTests
     private readonly Mock<IRestEndpointChecker> _mockRestEndpointChecker;
     private readonly Mock<IDockerContainerManager> _mockContainerManager;
     private readonly Mock<ISettingsRepository> _mockSettingsRepository;
+    private readonly Mock<IClipboardService> _mockClipboardService;
 
     public ServicesTabViewModelTests()
     {
@@ -24,6 +25,7 @@ public class ServicesTabViewModelTests
         _mockRestEndpointChecker = new Mock<IRestEndpointChecker>();
         _mockContainerManager = new Mock<IDockerContainerManager>();
         _mockSettingsRepository = new Mock<ISettingsRepository>();
+        _mockClipboardService = new Mock<IClipboardService>();
 
         // Setup default returns to prevent null reference exceptions
         _mockServiceRepository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -347,6 +349,111 @@ public class ServicesTabViewModelTests
         _mockServiceRepository.Verify(x => x.AddAsync(It.IsAny<ServiceInfo>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task CopyVersionAsync_WithValidVersion_ShouldCopyToClipboard()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var serviceItem = new ServiceItemViewModel
+        {
+            Name = "TestService",
+            Version = "1.2.3.4"
+        };
+
+        // Act
+        await viewModel.CopyVersionCommand.ExecuteAsync(serviceItem);
+
+        // Assert
+        _mockClipboardService.Verify(x => x.SetTextAsync("1.2.3.4", It.IsAny<CancellationToken>()), Times.Once);
+        viewModel.ErrorMessage.Should().BeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task CopyVersionAsync_WithNullService_ShouldSetErrorMessage()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        // Act
+        await viewModel.CopyVersionCommand.ExecuteAsync(null);
+
+        // Assert
+        _mockClipboardService.Verify(x => x.SetTextAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        viewModel.ErrorMessage.Should().NotBeNullOrEmpty();
+        viewModel.ErrorMessage.Should().Contain("No version available");
+    }
+
+    [Fact]
+    public async Task CopyVersionAsync_WithNullVersion_ShouldSetErrorMessage()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var serviceItem = new ServiceItemViewModel
+        {
+            Name = "TestService",
+            Version = null
+        };
+
+        // Act
+        await viewModel.CopyVersionCommand.ExecuteAsync(serviceItem);
+
+        // Assert
+        _mockClipboardService.Verify(x => x.SetTextAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        viewModel.ErrorMessage.Should().NotBeNullOrEmpty();
+        viewModel.ErrorMessage.Should().Contain("No version available");
+    }
+
+    [Fact]
+    public async Task CopyVersionAsync_WithEmptyVersion_ShouldSetErrorMessage()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var serviceItem = new ServiceItemViewModel
+        {
+            Name = "TestService",
+            Version = "   " // Whitespace only
+        };
+
+        // Act
+        await viewModel.CopyVersionCommand.ExecuteAsync(serviceItem);
+
+        // Assert
+        _mockClipboardService.Verify(x => x.SetTextAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        viewModel.ErrorMessage.Should().NotBeNullOrEmpty();
+        viewModel.ErrorMessage.Should().Contain("No version available");
+    }
+
+    [Fact]
+    public async Task CopyVersionAsync_WhenClipboardServiceThrows_ShouldSetErrorMessage()
+    {
+        // Arrange
+        _mockClipboardService.Setup(x => x.SetTextAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Clipboard not available"));
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        var serviceItem = new ServiceItemViewModel
+        {
+            Name = "TestService",
+            Version = "1.2.3.4"
+        };
+
+        // Act
+        await viewModel.CopyVersionCommand.ExecuteAsync(serviceItem);
+
+        // Assert
+        viewModel.ErrorMessage.Should().NotBeNullOrEmpty();
+        viewModel.ErrorMessage.Should().Contain("Failed to copy version");
+    }
+
     private ServicesTabViewModel CreateViewModel()
     {
         return new ServicesTabViewModel(
@@ -354,6 +461,7 @@ public class ServicesTabViewModelTests
             _mockWindowsServiceManager.Object,
             _mockRestEndpointChecker.Object,
             _mockContainerManager.Object,
-            _mockSettingsRepository.Object);
+            _mockSettingsRepository.Object,
+            _mockClipboardService.Object);
     }
 }

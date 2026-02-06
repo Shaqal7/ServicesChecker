@@ -181,6 +181,10 @@
                               Command="{Binding $parent[DataGrid].((vm:ServicesTabViewModel)DataContext).RestartServiceCommand}"
                               CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
                     <Separator/>
+                    <MenuItem Header="Copy Version"
+                              Command="{Binding $parent[DataGrid].((vm:ServicesTabViewModel)DataContext).CopyVersionCommand}"
+                              CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>
+                    <Separator/>
                     <MenuItem Header="Remove"
                               Command="{Binding $parent[DataGrid].((vm:ServicesTabViewModel)DataContext).RemoveServiceCommand}"
                               CommandParameter="{Binding $parent[DataGrid].SelectedItem}"/>

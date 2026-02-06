@@ -24,7 +24,8 @@ public class MainWindowViewModelTests
             Mock.Of<IWindowsServiceManager>(),
             Mock.Of<IRestEndpointChecker>(),
             Mock.Of<IDockerContainerManager>(),
-            Mock.Of<ISettingsRepository>());
+            Mock.Of<ISettingsRepository>(),
+            Mock.Of<IClipboardService>());
 
         _mockConfigurationTab = new Mock<ConfigurationTabViewModel>(
             Mock.Of<ILogFileRepository>(),

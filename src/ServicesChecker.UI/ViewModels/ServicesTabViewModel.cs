@@ -15,6 +15,7 @@ public partial class ServicesTabViewModel : ViewModelBase
     private readonly IRestEndpointChecker _restEndpointChecker;
     private readonly IDockerContainerManager _containerManager;
     private readonly ISettingsRepository _settingsRepository;
+    private readonly IClipboardService _clipboardService;
 
     private CancellationTokenSource? _refreshCts;
     private readonly List<ServiceInfo> _allServices = [];
@@ -51,13 +52,15 @@ public partial class ServicesTabViewModel : ViewModelBase
         IWindowsServiceManager windowsServiceManager,
         IRestEndpointChecker restEndpointChecker,
         IDockerContainerManager containerManager,
-        ISettingsRepository settingsRepository)
+        ISettingsRepository settingsRepository,
+        IClipboardService clipboardService)
     {
         _serviceRepository = serviceRepository;
         _windowsServiceManager = windowsServiceManager;
         _restEndpointChecker = restEndpointChecker;
         _containerManager = containerManager;
         _settingsRepository = settingsRepository;
+        _clipboardService = clipboardService;
 
         _ = InitializeAsync();
     }
@@ -333,6 +336,26 @@ public partial class ServicesTabViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task CopyVersionAsync(ServiceItemViewModel? service)
+    {
+        if (service == null || string.IsNullOrWhiteSpace(service.Version))
+        {
+            SetError("No version available to copy");
+            return;
+        }
+
+        try
+        {
+            await _clipboardService.SetTextAsync(service.Version);
+            ClearError();
+        }
+        catch (Exception ex)
+        {
+            SetError($"Failed to copy version: {ex.Message}");
         }
     }
 }
