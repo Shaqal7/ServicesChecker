@@ -212,9 +212,14 @@ public partial class ServicesTabViewModel : ViewModelBase
             await _serviceRepository.AddAsync(service);
             _allServices.Add(service);
 
+            // Clear input fields
             NewServiceName = string.Empty;
             NewServiceIsRest = false;
             NewServiceConnectsToDb = false;
+
+            // Clear filters to ensure the newly added service is visible
+            FilterText = string.Empty;
+            FilterConnectingToDb = false;
 
             ApplyFilter();
         }

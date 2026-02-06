@@ -237,6 +237,116 @@ public class ServicesTabViewModelTests
         viewModel.ErrorMessage.Should().Be("Test error");
     }
 
+    [Fact]
+    public async Task AddServiceAsync_WithValidWindowsService_ShouldAddServiceAndClearFilters()
+    {
+        // Arrange
+        _mockWindowsServiceManager.Setup(x => x.ServiceExistsAsync("TestService", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _mockServiceRepository.Setup(x => x.AddAsync(It.IsAny<ServiceInfo>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        // Set filters before adding service
+        viewModel.FilterText = "SomeFilter";
+        viewModel.FilterConnectingToDb = true;
+        viewModel.NewServiceName = "TestService";
+        viewModel.NewServiceIsRest = false;
+        viewModel.NewServiceConnectsToDb = false;
+
+        // Act
+        await viewModel.AddServiceCommand.ExecuteAsync(null);
+        await Task.Delay(100); // Allow async operation to complete
+
+        // Assert
+        viewModel.FilterText.Should().BeEmpty("filters should be cleared after adding a service");
+        viewModel.FilterConnectingToDb.Should().BeFalse("filters should be cleared after adding a service");
+        viewModel.NewServiceName.Should().BeEmpty("input fields should be cleared after adding a service");
+        viewModel.NewServiceIsRest.Should().BeFalse();
+        viewModel.NewServiceConnectsToDb.Should().BeFalse();
+        _mockServiceRepository.Verify(x => x.AddAsync(It.Is<ServiceInfo>(s =>
+            s.Name == "TestService" &&
+            s.Type == ServiceType.WindowsService &&
+            s.IsConnectingToDb == false),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddServiceAsync_WithRestEndpoint_ShouldAddServiceAndClearFilters()
+    {
+        // Arrange
+        _mockServiceRepository.Setup(x => x.AddAsync(It.IsAny<ServiceInfo>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        // Set filters before adding service
+        viewModel.FilterText = "SomeFilter";
+        viewModel.FilterConnectingToDb = true;
+        viewModel.NewServiceName = "http://example.com/api/health";
+        viewModel.NewServiceIsRest = true;
+        viewModel.NewServiceConnectsToDb = true;
+
+        // Act
+        await viewModel.AddServiceCommand.ExecuteAsync(null);
+        await Task.Delay(100); // Allow async operation to complete
+
+        // Assert
+        viewModel.FilterText.Should().BeEmpty("filters should be cleared after adding a service");
+        viewModel.FilterConnectingToDb.Should().BeFalse("filters should be cleared after adding a service");
+        viewModel.NewServiceName.Should().BeEmpty("input fields should be cleared after adding a service");
+        viewModel.NewServiceIsRest.Should().BeFalse();
+        viewModel.NewServiceConnectsToDb.Should().BeFalse();
+        _mockServiceRepository.Verify(x => x.AddAsync(It.Is<ServiceInfo>(s =>
+            s.Name == "http://example.com/api/health" &&
+            s.Type == ServiceType.RestEndpoint &&
+            s.IsConnectingToDb == true),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddServiceAsync_WithEmptyName_ShouldNotAddService()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        viewModel.NewServiceName = "   "; // Whitespace only
+
+        // Act
+        await viewModel.AddServiceCommand.ExecuteAsync(null);
+        await Task.Delay(100); // Allow async operation to complete
+
+        // Assert
+        _mockServiceRepository.Verify(x => x.AddAsync(It.IsAny<ServiceInfo>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AddServiceAsync_WithNonExistentWindowsService_ShouldShowError()
+    {
+        // Arrange
+        _mockWindowsServiceManager.Setup(x => x.ServiceExistsAsync("NonExistentService", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200); // Allow initialization
+
+        viewModel.NewServiceName = "NonExistentService";
+        viewModel.NewServiceIsRest = false;
+
+        // Act
+        await viewModel.AddServiceCommand.ExecuteAsync(null);
+        await Task.Delay(100); // Allow async operation to complete
+
+        // Assert
+        viewModel.ErrorMessage.Should().NotBeNullOrEmpty("an error message should be displayed when service doesn't exist");
+        viewModel.ErrorMessage.Should().Contain("NonExistentService");
+        _mockServiceRepository.Verify(x => x.AddAsync(It.IsAny<ServiceInfo>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     private ServicesTabViewModel CreateViewModel()
     {
         return new ServicesTabViewModel(
