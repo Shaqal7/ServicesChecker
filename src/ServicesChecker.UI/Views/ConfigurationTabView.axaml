@@ -47,7 +47,7 @@
         </Border>
 
         <!-- Header -->
-        <Border Grid.Row="2"
+        <Border Grid.Row="1"
                 Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="1"
