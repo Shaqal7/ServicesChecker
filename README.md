@@ -1,4 +1,4 @@
-# ServicesChecker
+# Services Checker
 
 A modern Windows desktop application for monitoring and managing Windows services, REST endpoints, log files, and Docker storage.
 
