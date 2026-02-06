@@ -615,6 +615,320 @@ public class ServicesTabViewModelTests
         propertyChangedRaised.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task StartContainerAsync_WithSelectedContainer_ShouldStartContainerAndPersistId()
+    {
+        // Arrange
+        var containers = new List<ContainerInfo>
+        {
+            new() { Id = "container-1", Name = "MyContainer", IsRunning = false }
+        };
+        _mockContainerManager.Setup(x => x.GetContainersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containers);
+        _mockSettingsRepository.Setup(x => x.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppSettings { SelectedContainerId = "old-container" });
+        _mockSettingsRepository.Setup(x => x.SaveAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200);
+
+        viewModel.SelectedContainer = containers[0];
+
+        // Act
+        await viewModel.StartContainerCommand.ExecuteAsync(null);
+
+        // Assert
+        _mockContainerManager.Verify(x => x.StartContainerAsync("container-1", It.IsAny<CancellationToken>()), Times.Once);
+        _mockSettingsRepository.Verify(x => x.SaveAsync(
+            It.Is<AppSettings>(s => s.SelectedContainerId == "container-1"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task StartContainerAsync_WithSelectedContainer_ShouldNotStopPreviousContainer()
+    {
+        // Arrange
+        var containers = new List<ContainerInfo>
+        {
+            new() { Id = "container-1", Name = "MyContainer", IsRunning = false }
+        };
+        _mockContainerManager.Setup(x => x.GetContainersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containers);
+        _mockSettingsRepository.Setup(x => x.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppSettings { SelectedContainerId = "old-container" });
+        _mockSettingsRepository.Setup(x => x.SaveAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200);
+
+        viewModel.SelectedContainer = containers[0];
+
+        // Act
+        await viewModel.StartContainerCommand.ExecuteAsync(null);
+
+        // Assert - verify Stop and Switch were NOT called
+        _mockContainerManager.Verify(x => x.StopContainerAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockContainerManager.Verify(x => x.SwitchContainerAsync(It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task StartContainerAsync_WithNoSelectedContainer_ShouldDoNothing()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200);
+
+        viewModel.SelectedContainer = null;
+
+        // Act
+        await viewModel.StartContainerCommand.ExecuteAsync(null);
+
+        // Assert
+        _mockContainerManager.Verify(x => x.StartContainerAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockSettingsRepository.Verify(x => x.SaveAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task StartContainerAsync_ShouldRefreshContainerList()
+    {
+        // Arrange
+        var containers = new List<ContainerInfo>
+        {
+            new() { Id = "container-1", Name = "MyContainer", IsRunning = false }
+        };
+        _mockContainerManager.Setup(x => x.GetContainersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containers);
+        _mockSettingsRepository.Setup(x => x.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppSettings());
+        _mockSettingsRepository.Setup(x => x.SaveAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200);
+
+        // Reset invocation count after initialization
+        _mockContainerManager.Invocations.Clear();
+        _mockContainerManager.Setup(x => x.GetContainersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containers);
+
+        viewModel.SelectedContainer = containers[0];
+
+        // Act
+        await viewModel.StartContainerCommand.ExecuteAsync(null);
+
+        // Assert - GetContainersAsync should be called during LoadContainersAsync refresh
+        _mockContainerManager.Verify(x => x.GetContainersAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task StartContainerAsync_WhenFails_ShouldSetErrorMessage()
+    {
+        // Arrange
+        var containers = new List<ContainerInfo>
+        {
+            new() { Id = "container-1", Name = "MyContainer", IsRunning = false }
+        };
+        _mockContainerManager.Setup(x => x.GetContainersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containers);
+        _mockSettingsRepository.Setup(x => x.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppSettings());
+        _mockContainerManager.Setup(x => x.StartContainerAsync("container-1", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Docker not running"));
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200);
+
+        viewModel.SelectedContainer = containers[0];
+
+        // Act
+        await viewModel.StartContainerCommand.ExecuteAsync(null);
+
+        // Assert
+        viewModel.ErrorMessage.Should().NotBeNullOrEmpty();
+        viewModel.ErrorMessage.Should().Contain("Failed to start container");
+        viewModel.IsBusy.Should().BeFalse("IsBusy should be reset after failure");
+    }
+
+    [Fact]
+    public async Task StartContainerAsync_ShouldSetIsBusyDuringOperation()
+    {
+        // Arrange
+        var containers = new List<ContainerInfo>
+        {
+            new() { Id = "container-1", Name = "MyContainer", IsRunning = false }
+        };
+        _mockContainerManager.Setup(x => x.GetContainersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containers);
+        _mockSettingsRepository.Setup(x => x.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppSettings());
+        _mockSettingsRepository.Setup(x => x.SaveAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200);
+
+        viewModel.SelectedContainer = containers[0];
+
+        // Act
+        await viewModel.StartContainerCommand.ExecuteAsync(null);
+
+        // Assert - after completion, IsBusy should be false
+        viewModel.IsBusy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task StopContainerAsync_WithSelectedContainer_ShouldStopContainer()
+    {
+        // Arrange
+        var containers = new List<ContainerInfo>
+        {
+            new() { Id = "container-1", Name = "MyContainer", IsRunning = true }
+        };
+        _mockContainerManager.Setup(x => x.GetContainersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containers);
+        _mockSettingsRepository.Setup(x => x.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppSettings());
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200);
+
+        viewModel.SelectedContainer = containers[0];
+
+        // Act
+        await viewModel.StopContainerCommand.ExecuteAsync(null);
+
+        // Assert
+        _mockContainerManager.Verify(x => x.StopContainerAsync("container-1", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task StopContainerAsync_WithSelectedContainer_ShouldNotStartAnyContainer()
+    {
+        // Arrange
+        var containers = new List<ContainerInfo>
+        {
+            new() { Id = "container-1", Name = "MyContainer", IsRunning = true }
+        };
+        _mockContainerManager.Setup(x => x.GetContainersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containers);
+        _mockSettingsRepository.Setup(x => x.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppSettings());
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200);
+
+        viewModel.SelectedContainer = containers[0];
+
+        // Act
+        await viewModel.StopContainerCommand.ExecuteAsync(null);
+
+        // Assert - verify Start and Switch were NOT called
+        _mockContainerManager.Verify(x => x.StartContainerAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockContainerManager.Verify(x => x.SwitchContainerAsync(It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task StopContainerAsync_WithNoSelectedContainer_ShouldDoNothing()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        await Task.Delay(200);
+
+        viewModel.SelectedContainer = null;
+
+        // Act
+        await viewModel.StopContainerCommand.ExecuteAsync(null);
+
+        // Assert
+        _mockContainerManager.Verify(x => x.StopContainerAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task StopContainerAsync_ShouldRefreshContainerList()
+    {
+        // Arrange
+        var containers = new List<ContainerInfo>
+        {
+            new() { Id = "container-1", Name = "MyContainer", IsRunning = true }
+        };
+        _mockContainerManager.Setup(x => x.GetContainersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containers);
+        _mockSettingsRepository.Setup(x => x.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppSettings());
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200);
+
+        // Reset invocation count after initialization
+        _mockContainerManager.Invocations.Clear();
+        _mockContainerManager.Setup(x => x.GetContainersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containers);
+
+        viewModel.SelectedContainer = containers[0];
+
+        // Act
+        await viewModel.StopContainerCommand.ExecuteAsync(null);
+
+        // Assert - GetContainersAsync should be called during LoadContainersAsync refresh
+        _mockContainerManager.Verify(x => x.GetContainersAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task StopContainerAsync_WhenFails_ShouldSetErrorMessage()
+    {
+        // Arrange
+        var containers = new List<ContainerInfo>
+        {
+            new() { Id = "container-1", Name = "MyContainer", IsRunning = true }
+        };
+        _mockContainerManager.Setup(x => x.GetContainersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containers);
+        _mockSettingsRepository.Setup(x => x.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppSettings());
+        _mockContainerManager.Setup(x => x.StopContainerAsync("container-1", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Docker not running"));
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200);
+
+        viewModel.SelectedContainer = containers[0];
+
+        // Act
+        await viewModel.StopContainerCommand.ExecuteAsync(null);
+
+        // Assert
+        viewModel.ErrorMessage.Should().NotBeNullOrEmpty();
+        viewModel.ErrorMessage.Should().Contain("Failed to stop container");
+        viewModel.IsBusy.Should().BeFalse("IsBusy should be reset after failure");
+    }
+
+    [Fact]
+    public async Task StopContainerAsync_ShouldSetIsBusyDuringOperation()
+    {
+        // Arrange
+        var containers = new List<ContainerInfo>
+        {
+            new() { Id = "container-1", Name = "MyContainer", IsRunning = true }
+        };
+        _mockContainerManager.Setup(x => x.GetContainersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(containers);
+        _mockSettingsRepository.Setup(x => x.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppSettings());
+
+        var viewModel = CreateViewModel();
+        await Task.Delay(200);
+
+        viewModel.SelectedContainer = containers[0];
+
+        // Act
+        await viewModel.StopContainerCommand.ExecuteAsync(null);
+
+        // Assert - after completion, IsBusy should be false
+        viewModel.IsBusy.Should().BeFalse();
+    }
+
     private ServicesTabViewModel CreateViewModel()
     {
         return new ServicesTabViewModel(

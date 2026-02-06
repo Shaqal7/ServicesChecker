@@ -119,6 +119,12 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+                <Button Content="Start"
+                        Command="{Binding StartContainerCommand}"
+                        IsEnabled="{Binding SelectedContainer, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                <Button Content="Stop"
+                        Command="{Binding StopContainerCommand}"
+                        IsEnabled="{Binding SelectedContainer, Converter={x:Static ObjectConverters.IsNotNull}}"/>
                 <Button Content="Switch"
                         Command="{Binding SwitchContainerCommand}"
                         IsEnabled="{Binding SelectedContainer, Converter={x:Static ObjectConverters.IsNotNull}}"/>

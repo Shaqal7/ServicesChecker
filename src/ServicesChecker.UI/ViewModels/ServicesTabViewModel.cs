@@ -377,6 +377,58 @@ public partial class ServicesTabViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task StartContainerAsync()
+    {
+        if (SelectedContainer == null) return;
+
+        try
+        {
+            IsBusy = true;
+            ClearError();
+
+            await _containerManager.StartContainerAsync(SelectedContainer.Id);
+
+            var settings = await _settingsRepository.GetAsync();
+            settings.SelectedContainerId = SelectedContainer.Id;
+            await _settingsRepository.SaveAsync(settings);
+
+            await LoadContainersAsync();
+        }
+        catch (Exception ex)
+        {
+            SetError($"Failed to start container: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task StopContainerAsync()
+    {
+        if (SelectedContainer == null) return;
+
+        try
+        {
+            IsBusy = true;
+            ClearError();
+
+            await _containerManager.StopContainerAsync(SelectedContainer.Id);
+
+            await LoadContainersAsync();
+        }
+        catch (Exception ex)
+        {
+            SetError($"Failed to stop container: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
     private async Task CopyVersionAsync(ServiceItemViewModel? service)
     {
         if (service == null || string.IsNullOrWhiteSpace(service.Version))
