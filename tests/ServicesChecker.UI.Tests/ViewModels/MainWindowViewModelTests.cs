@@ -192,6 +192,33 @@ public class MainWindowViewModelTests
         viewModel.CurrentVersion.Should().Be("v2026.01.01-abc1234");
     }
 
+    [Fact]
+    public void Constructor_ShouldStartAutoRefreshForAllTabs()
+    {
+        // Act
+        var viewModel = CreateViewModel();
+
+        // Assert
+        _mockServicesTab.Verify(x => x.StartAutoRefresh(), Times.Once);
+        _mockConfigurationTab.Verify(x => x.StartAutoRefresh(), Times.Once);
+        _mockStatisticsTab.Verify(x => x.StartAutoRefresh(), Times.Once);
+    }
+
+    [Fact]
+    public void Cleanup_ShouldStopAutoRefreshForAllTabs()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+
+        // Act
+        viewModel.Cleanup();
+
+        // Assert
+        _mockServicesTab.Verify(x => x.StopAutoRefresh(), Times.Once);
+        _mockConfigurationTab.Verify(x => x.StopAutoRefresh(), Times.Once);
+        _mockStatisticsTab.Verify(x => x.StopAutoRefresh(), Times.Once);
+    }
+
     private MainWindowViewModel CreateViewModel()
     {
         return new MainWindowViewModel(

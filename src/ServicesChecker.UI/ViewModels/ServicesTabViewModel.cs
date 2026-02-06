@@ -69,9 +69,9 @@ public partial class ServicesTabViewModel : ViewModelBase
         StartAutoRefresh();
     }
 
-    private void StartAutoRefresh()
+    public void StartAutoRefresh()
     {
-        _refreshCts?.Cancel();
+        StopAutoRefresh();
         _refreshCts = new CancellationTokenSource();
 
         _ = Task.Run(async () =>
@@ -82,6 +82,13 @@ public partial class ServicesTabViewModel : ViewModelBase
                 await RefreshStatusesAsync();
             }
         }, _refreshCts.Token);
+    }
+
+    public void StopAutoRefresh()
+    {
+        _refreshCts?.Cancel();
+        _refreshCts?.Dispose();
+        _refreshCts = null;
     }
 
     [RelayCommand]

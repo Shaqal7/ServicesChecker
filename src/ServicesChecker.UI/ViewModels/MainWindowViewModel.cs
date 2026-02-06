@@ -63,6 +63,11 @@ public partial class MainWindowViewModel : ViewModelBase
         _ = LoadSettingsAsync();
         _ = CheckForUpdateAsync();
         _ = StartPeriodicUpdateCheckAsync();
+
+        // Start auto-refresh for all tabs
+        ServicesTab.StartAutoRefresh();
+        ConfigurationTab.StartAutoRefresh();
+        StatisticsTab.StartAutoRefresh();
     }
 
     private async Task LoadSettingsAsync()
@@ -168,5 +173,16 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             // Timer disposed or cancelled - silent exit
         }
+    }
+
+    public void Cleanup()
+    {
+        // Stop all auto-refresh timers
+        ServicesTab.StopAutoRefresh();
+        ConfigurationTab.StopAutoRefresh();
+        StatisticsTab.StopAutoRefresh();
+
+        // Dispose update check timer
+        _updateCheckTimer.Dispose();
     }
 }
