@@ -279,7 +279,7 @@ public partial class ServicesTabViewModel : ViewModelBase
         ApplyFilter();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanStartService))]
     private async Task StartServiceAsync(ServiceItemViewModel? service)
     {
         if (service == null || !service.IsWindowsService || service.IsBusy) return;
@@ -287,6 +287,7 @@ public partial class ServicesTabViewModel : ViewModelBase
         try
         {
             service.IsBusy = true;
+            NotifyCommandsCanExecuteChanged();
             service.Status = ServiceStatus.StartPending;
             await _windowsServiceManager.StartAsync(service.Name);
             await RefreshSingleServiceAsync(service);
@@ -299,10 +300,16 @@ public partial class ServicesTabViewModel : ViewModelBase
         finally
         {
             service.IsBusy = false;
+            NotifyCommandsCanExecuteChanged();
         }
     }
 
-    [RelayCommand]
+    private bool CanStartService(ServiceItemViewModel? service)
+    {
+        return service != null && service.IsWindowsService && !service.IsBusy;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanStopService))]
     private async Task StopServiceAsync(ServiceItemViewModel? service)
     {
         if (service == null || !service.IsWindowsService || service.IsBusy) return;
@@ -310,6 +317,7 @@ public partial class ServicesTabViewModel : ViewModelBase
         try
         {
             service.IsBusy = true;
+            NotifyCommandsCanExecuteChanged();
             service.Status = ServiceStatus.StopPending;
             await _windowsServiceManager.StopAsync(service.Name);
             await RefreshSingleServiceAsync(service);
@@ -322,10 +330,16 @@ public partial class ServicesTabViewModel : ViewModelBase
         finally
         {
             service.IsBusy = false;
+            NotifyCommandsCanExecuteChanged();
         }
     }
 
-    [RelayCommand]
+    private bool CanStopService(ServiceItemViewModel? service)
+    {
+        return service != null && service.IsWindowsService && !service.IsBusy;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRestartService))]
     private async Task RestartServiceAsync(ServiceItemViewModel? service)
     {
         if (service == null || !service.IsWindowsService || service.IsBusy) return;
@@ -333,6 +347,7 @@ public partial class ServicesTabViewModel : ViewModelBase
         try
         {
             service.IsBusy = true;
+            NotifyCommandsCanExecuteChanged();
             service.Status = ServiceStatus.StopPending;
             await _windowsServiceManager.RestartAsync(service.Name);
             await RefreshSingleServiceAsync(service);
@@ -345,7 +360,20 @@ public partial class ServicesTabViewModel : ViewModelBase
         finally
         {
             service.IsBusy = false;
+            NotifyCommandsCanExecuteChanged();
         }
+    }
+
+    private bool CanRestartService(ServiceItemViewModel? service)
+    {
+        return service != null && service.IsWindowsService && !service.IsBusy;
+    }
+
+    private void NotifyCommandsCanExecuteChanged()
+    {
+        StartServiceCommand.NotifyCanExecuteChanged();
+        StopServiceCommand.NotifyCanExecuteChanged();
+        RestartServiceCommand.NotifyCanExecuteChanged();
     }
 
     [RelayCommand]
